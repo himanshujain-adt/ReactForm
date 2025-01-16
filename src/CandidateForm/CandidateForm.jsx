@@ -467,6 +467,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import './CandidateForm.css';
 import axios from 'axios';
+import Typed from 'typed.js';
+
+
 
 const CandidateForm = () => {
   const [selectedDays, setSelectedDays] = useState([]);
@@ -488,11 +491,31 @@ const CandidateForm = () => {
     seniorityLevel: 'Senior',
   });
   const dropdownRef = useRef(null);
-
+  const typedRef = useRef(null);
   const days = [
     'Monday', 'Tuesday', 'Wednesday', 'Thursday',
     'Friday', 'Saturday', 'Sunday'
   ];
+
+
+  useEffect(() => {
+    const typed = new Typed(typedRef.current, {
+      strings: ['Candidate Details'],
+      typeSpeed: 50,
+      backSpeed: 50,
+      backDelay: 2000,
+      startDelay: 500,
+      loop: true,
+      showCursor: true,
+      cursorChar: '|'
+    });
+
+    return () => {
+      typed.destroy();
+    };
+  }, []);
+
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -547,7 +570,7 @@ const CandidateForm = () => {
       <div className="container">
         <div className="form-container">
           <div className="candidate-details-header mb-3">
-            <h2 className="header-title">Candidate Details</h2>
+            <h2 className="header-title">   <span ref={typedRef}> Candidate Details </span></h2>
           </div>
 
           <form onSubmit={handleFormSubmit}>
