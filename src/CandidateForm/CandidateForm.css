@@ -1,0 +1,327 @@
+/* CandidateForm.css */
+.main-container {
+    background-color: #B1C2F8;
+    padding: 3rem 0;
+  }
+  
+  .form-container {
+    max-width: 861px;
+    background-color: white;
+    border-radius: 1rem;
+    padding: 1rem 5rem; /* Added 2rem padding to left and right */
+    box-shadow: 20px 20px 18px 5px #00000040;
+    margin: 0 auto;
+  }
+  
+  
+  .candidate-details-header {
+    background-color: #3E63FB;
+    width: 50%;
+    height: 50px;
+    border-radius: 0 0 20px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+
+  }
+  
+  .header-title {
+    letter-spacing: 2px;
+    font-weight: bold;
+    margin-bottom: 0;
+    color: white;
+  }
+  
+  .form-label {
+    font-family: 'Poppins';
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 28px;
+    letter-spacing: 0.06em;
+    text-align: left;
+    color: #3C88FA;
+    text-underline-position: from-font;
+    text-decoration-skip-ink: none;
+  }
+  
+  .form-input,
+  .form-select,
+  .form-control {
+    border: 1px solid #DAE3ED;
+    border-radius: 0.75rem;
+  }
+  
+  .section-title {
+    font-family: 'Poppins';
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-decoration: underline;
+    color: #0080D0;
+  }
+  
+  .upload-resume {
+    text-align: center;
+  }
+  
+  .upload-button {
+    background-color: #B1C2F88F;
+    width: 20%; /* You can adjust this value to make it smaller */
+    padding: 0.5rem 0;
+    border-radius: 0.75rem;
+    margin: 0 auto;
+    display: block;
+    max-width: 150px; /* Optional: Set a maximum width to prevent it from growing too large */
+  }
+  
+  
+  .submit-button {
+    background-color: #8A9BDF;
+    max-width: 687px;
+    width: 100%;
+    padding: 1rem 0;
+    border-radius: 0.75rem;
+    display: block;
+    margin: 0 auto;
+    border: 1px solid #1B17CE;
+    color: white;
+  }
+  
+  /* Dropdown Specific Styles */
+  .custom-dropdown {
+    position: relative;
+    width: 100%;
+  }
+  
+  .custom-dropdown-button {
+    border: 1px solid #DAE3ED;
+    background-color: white;
+    border-radius: 0.75rem;
+    width: 100%;
+    text-align: left;
+    padding: 0.375rem 0.75rem;
+  }
+  
+  .custom-dropdown-menu {
+    padding: 10px;
+    border: 1px solid #DAE3ED;
+    border-radius: 5px;
+    width: 100%;
+    background-color: white;
+    margin-top: 0.25rem;
+  }
+  
+  .custom-dropdown-menu.show {
+    display: block;
+  }
+  
+  /* Form Group Spacing */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  /* Sections Spacing */
+  .inclusions,
+  .exclusions {
+    margin-top: 3rem;
+  }
+  
+  /* Form Check Styles */
+  .form-check {
+    padding-left: 1.5rem;
+  }
+  
+  .form-check-input {
+    margin-right: 0.5rem;
+  }
+  
+  .form-check-label {
+    margin-left: 0.5rem;
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .candidate-details-header {
+      width: 80%;
+    }
+    
+    .upload-button {
+      width: 80%;
+    }
+    
+    .submit-button {
+      max-width: 100%;
+    }
+  }
+  
+  /* Input Placeholders */
+  .form-control::placeholder {
+    color: #6c757d;
+    opacity: 0.8;
+  }
+  
+  /* Focus States */
+  .form-control:focus,
+  .form-select:focus,
+  .custom-dropdown-button:focus {
+    border-color: #3C88FA;
+    box-shadow: 0 0 0 0.25rem rgba(60, 136, 250, 0.25);
+    outline: none;
+  }
+  
+  /* Hover States */
+  .submit-button:hover {
+    background-color: #7385c7;
+    border-color: #1611b3;
+  }
+  
+  .upload-button:hover {
+    background-color: #9eb1f8;
+  }
+  
+  /* Dropdown Toggle Icon */
+  .dropdown-toggle::after {
+    float: right;
+    margin-top: 8px;
+  }
+
+
+  /* Upload Resume Button */
+.upload-resume button {
+    background-color: rgba(177, 194, 248, 0.56);
+    width: 50%;
+    padding: 0.5rem 0;
+    border-radius: 0.75rem;
+    display: block;
+    margin: 0 auto;
+    border: none;
+    font-weight: 500;
+  }
+  
+  /* Submit Preferences Button */
+  .submit-preferences button {
+    background-color: #8A9BDF;
+    width: 100%;
+    max-width: 687px;
+    padding: 1rem 0;
+    border-radius: 0.75rem;
+    display: block;
+    margin: 0 auto;
+    border: 1px solid #1B17CE;
+    color: white;
+    font-weight: 500;
+  }
+  
+  .submit-preferences button:hover {
+    background-color: #7385c7;
+  }
+  
+  .upload-resume button:hover {
+    background-color: rgba(177, 194, 248, 0.7);
+  }
+
+
+
+  /* Common styles for all input fields, select, and dropdowns */
+.form-control,
+.form-select,
+.custom-dropdown-button {
+  border: 1px solid #DAE3ED;
+  border-radius: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  width: 100%;
+  background-color: white;
+  font-size: 1rem;
+  line-height: 1.5;
+  height: 38px; /* This ensures consistent height across all inputs */
+}
+
+/* Specific styles for the Report Schedule dropdown */
+.custom-dropdown-button.dropdown-toggle {
+  background-color: white;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #212529;
+}
+
+.custom-dropdown-menu {
+  padding: 10px;
+  border: 1px solid #DAE3ED;
+  border-radius: 0.75rem;
+  width: 100%;
+  background-color: white;
+  margin-top: 0.25rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Focus states for all input elements */
+.form-control:focus,
+.form-select:focus,
+.custom-dropdown-button:focus {
+  border-color: #3C88FA;
+  box-shadow: 0 0 0 0.25rem rgba(60, 136, 250, 0.25);
+  outline: none;
+}
+
+/* Placeholder styles */
+.form-control::placeholder {
+  color: #6c757d;
+  opacity: 0.8;
+}
+
+/* Dropdown toggle arrow */
+.dropdown-toggle::after {
+  margin-left: auto;
+}
+
+
+/* Report Schedule dropdown container */
+.custom-dropdown {
+    position: relative;
+    width: 100%;
+  }
+  
+  /* Report Schedule button (main input field) */
+  .custom-dropdown-button {
+    border: 1px solid #DAE3ED !important;
+    border-radius: 0.75rem !important;
+    width: 100%;
+    text-align: left;
+    background-color: white;
+    padding: 0.375rem 0.75rem;
+    height: 38px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Dropdown menu (options list) */
+  .custom-dropdown-menu {
+    width: 100%;
+    padding: 10px;
+    margin-top: 0.25rem;
+    background-color: white;
+    border: 1px solid #DAE3ED;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Focus state for the dropdown button */
+  .custom-dropdown-button:focus {
+    border-color: #3C88FA !important;
+    box-shadow: 0 0 0 0.25rem rgba(60, 136, 250, 0.25);
+    outline: none;
+  }
+  
+  /* Hover state for the dropdown button */
+  .custom-dropdown-button:hover {
+    border-color: #DAE3ED;
+  }
+  
+  /* Dropdown arrow alignment */
+  .custom-dropdown-button::after {
+    margin-left: auto;
+  }
