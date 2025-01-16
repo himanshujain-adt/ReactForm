@@ -72,7 +72,7 @@
 //                   </select>
 //                 </div>
 //               </div>
-              
+
 //               <div className="col-md-6">
 //                 <div className="form-group">
 //                   <label className="form-label">Minimum Salary</label>
@@ -544,7 +544,7 @@ const CandidateForm = () => {
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
-    
+
     const payload = {
       prefs: formData,
       dayOfWeek: selectedDays[0] || '',  // You can adjust this logic as needed
@@ -566,135 +566,149 @@ const CandidateForm = () => {
   return (
     <div className="main-container">
       <div className="container">
-        <div className="form-container">
+        <motion.div className="form-container"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6 }}
+        >
           <div className="candidate-details-header mb-3">
             <h2 className="header-title">   <span ref={typedRef}> Candidate Details </span></h2>
           </div>
 
           <form onSubmit={handleFormSubmit}>
             <div className="row g-4">
-              <div className="col-md-6">
+              {/* Target Job Title */}
+              <motion.div
+                className="col-md-6"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
                 <div className="form-group">
-                  <motion.label 
+                  <label
                     className="form-label"
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
                   >
                     Target Job Title
-                  </motion.label>
-                  <input 
-                    type="text" 
+                  </label>
+                  <input
+                    type="text"
                     className="form-control form-input rounded-3"
                     placeholder="Enter target job title"
                     value={formData.jobTitles.join(', ')}
                     onChange={(e) => setFormData({ ...formData, jobTitles: e.target.value.split(',') })}
                   />
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="col-md-6">
+              {/* Job Location */}
+              <motion.div
+                className="col-md-6"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
                 <div className="form-group">
-                  <motion.label 
-                    className="form-label"
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    Job Location
-                  </motion.label>
-                  <select
+                  <label className="form-label">Job Location</label>
+                  <motion.select
                     className="form-select form-input rounded-3"
-                    onChange={(e) => setFormData({ ...formData, desiredLocations: [e.target.value] })}
+                    whileHover={{ scale: 1.05 }} // Hover scale
+                    transition={{ duration: 0.2 }}
                   >
                     <option>Select Job Location</option>
                     <option value="work-from-home">Work From Home (WFH)</option>
                     <option value="work-from-office">Work From Office (WFO)</option>
                     <option value="hybrid">Hybrid</option>
-                  </select>
+                  </motion.select>
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="col-md-6">
+              {/* Minimum Salary */}
+              <motion.div
+                className="col-md-6"
+                initial={{ opacity: 0, y: -50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+              >
                 <div className="form-group">
-                  <motion.label 
-                    className="form-label"
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    Minimum Salary
-                  </motion.label>
-                  <input 
-                    type="text" 
+                  <label className="form-label">Minimum Salary</label>
+                  <motion.input
+                    type="text"
                     className="form-control form-input rounded-3"
                     placeholder="Enter minimum salary"
-                    value={formData.lowestSalary}
-                    onChange={(e) => setFormData({ ...formData, lowestSalary: e.target.value })}
+                    whileHover={{ scale: 1.05 }} // Hover scale
+                    transition={{ duration: 0.2 }}
                   />
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="col-md-6">
+
+              {/* Minimum Score */}
+              <motion.div
+                className="col-md-6"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+              >
                 <div className="form-group">
-                  <motion.label 
-                    className="form-label"
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    Minimum Score
-                  </motion.label>
-                  <input 
-                    type="text" 
+                  <label className="form-label">Minimum Score</label>
+                  <motion.input
+                    type="text"
                     className="form-control form-input rounded-3"
                     placeholder="Enter minimum score"
+                    whileHover={{ scale: 1.05 }} // Hover scale
+                    transition={{ duration: 0.2 }}
                   />
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="col-md-6">
+              {/* Job Type */}
+              <motion.div
+                className="col-md-6"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 1 }}
+              >
                 <div className="form-group">
-                  <motion.label 
-                    className="form-label"
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    Job Type
-                  </motion.label>
-                  <select 
+                  <label className="form-label">Job Type</label>
+                  <motion.select
                     className="form-select form-input rounded-3"
-                    onChange={(e) => setFormData({ ...formData, jobTitles: [e.target.value] })}
+                    whileHover={{ scale: 1.05 }} // Hover scale
+                    transition={{ duration: 0.2 }}
                   >
                     <option value="" disabled selected>Select Job Type</option>
                     <option value="full-time">Full Time</option>
                     <option value="part-time">Part Time</option>
                     <option value="contract">Contract</option>
                     <option value="internship">Internship</option>
-                  </select>
+                  </motion.select>
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="col-md-6">
+              {/* Report Schedule */}
+              <motion.div
+                className="col-md-6"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 1.2 }}
+              >
                 <div className="form-group">
-                  <motion.label 
-                    className="form-label"
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    Report Schedule
-                  </motion.label>
+                  <label className="form-label">Report Schedule</label>
                   <div className="dropdown" ref={dropdownRef}>
-                    <button
+                    <motion.button
                       className="btn custom-dropdown-button dropdown-toggle"
                       type="button"
                       onClick={() => setIsOpen(!isOpen)}
+                      whileHover={{ scale: 1.05 }} // Hover scale
+                      transition={{ duration: 0.2 }}
                     >
                       {getButtonText()}
-                    </button>
-                    <div className={`dropdown-menu custom-dropdown-menu ${isOpen ? 'show' : ''}`}>
+                    </motion.button>
+                    <motion.div
+                      className={`dropdown-menu custom-dropdown-menu ${isOpen ? 'show' : ''}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: isOpen ? 1 : 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
                       {days.map((day) => (
                         <div key={day} className="form-check mb-2">
                           <input
@@ -704,87 +718,117 @@ const CandidateForm = () => {
                             checked={selectedDays.includes(day)}
                             onChange={() => handleDayToggle(day)}
                           />
-                          <label 
-                            className="form-check-label ms-2" 
+                          <label
+                            className="form-check-label ms-2"
                             htmlFor={`${day.toLowerCase()}Checkbox`}
                           >
                             {day}
                           </label>
                         </div>
                       ))}
-                    </div>
+                    </motion.div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             <div className="inclusions mt-5">
               <h3 className="section-title">Inclusions:</h3>
+
               <div className="row g-4 mt-2">
                 {['Desired Companies', 'Desired Industries', 'Desired Company Size', 'Desired Location'].map((label) => (
-                  <div key={label} className="col-md-6">
+                  <motion.div key={label}
+                    className="col-md-6"
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 1 }}
+                  >
                     <div className="form-group">
-                      <motion.label 
+                      <label
                         className="form-label"
-                        initial={{ opacity: 0 }} 
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.5 }}
                       >
                         {label}
-                      </motion.label>
-                      <input 
-                        type="text" 
+                      </label>
+                      <motion.input
+                        type="text"
                         className="form-control form-input rounded-3"
                         placeholder={`Enter ${label.toLowerCase()}`}
                         onChange={(e) => setFormData({ ...formData, [label.replace(' ', '').toLowerCase()]: e.target.value })}
                       />
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
+
             </div>
 
             <div className="exclusions mt-5">
               <h3 className="section-title">Exclusions:</h3>
               <div className="row g-4 mt-2">
                 {['Undesired Companies', 'Undesired Industries', 'Undesired Company Size', 'Undesired Location'].map((label) => (
-                  <div key={label} className="col-md-6">
+                  <motion.div key={label}
+                    className="col-md-6"
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, delay: 1.2 }}
+                  >
                     <div className="form-group">
-                      <motion.label 
+                      <label
                         className="form-label"
-                        initial={{ opacity: 0 }} 
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.5 }}
                       >
                         {label}
-                      </motion.label>
-                      <input 
-                        type="text" 
+                      </label>
+                      <motion.input
+                        type="text"
                         className="form-control form-input rounded-3"
                         placeholder={`Enter ${label.toLowerCase()}`}
                         onChange={(e) => setFormData({ ...formData, [label.replace(' ', '').toLowerCase()]: e.target.value })}
                       />
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
 
 
-            <div className="upload-resume mt-5">
-              <button type="button" className="btn upload-button">
+            {/* Upload Button with Bounce */}
+            <motion.div
+              className="upload-resume mt-5"
+              initial={{ scale: 1 }}
+              animate={{ scale: 1.1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 10 }}
+            >
+              <motion.button
+                type="button"
+                className="btn upload-button"
+                whileHover={{ scale: 1.1 }}  // Hover effect
+                whileTap={{ scale: 0.95 }}  // Tap effect
+                transition={{ duration: 0.2 }}
+              >
                 Upload Resume
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
 
 
-            <div className="submit-preferences mt-5">
-              <button type="submit" className="btn submit-button">
+            {/* Submit Button with Bounce */}
+            <motion.div
+              className="submit-preferences mt-5"
+              initial={{ scale: 1 }}
+              animate={{ scale: 1.1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 10 }}
+            >
+              <motion.button
+                type="submit"
+                className="btn submit-button"
+                whileHover={{ scale: 1.1 }}  // Hover effect
+                whileTap={{ scale: 0.95 }}  // Tap effect
+                transition={{ duration: 0.2 }}
+              >
                 SUBMIT PREFERENCES
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           </form>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
