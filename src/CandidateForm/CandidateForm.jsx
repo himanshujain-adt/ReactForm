@@ -469,8 +469,6 @@ import './CandidateForm.css';
 import axios from 'axios';
 import Typed from 'typed.js';
 
-
-
 const CandidateForm = () => {
   const [selectedDays, setSelectedDays] = useState([]);
   const [isOpen, setIsOpen] = useState(false);

@@ -23,7 +23,7 @@
     align-items: center;
     justify-content: center;
     margin: 0 auto;
-
+    margin-bottom: 0;  /* Ensure no bottom margin */
   }
   
   .header-title {
@@ -31,7 +31,19 @@
     font-weight: bold;
     margin-bottom: 0;
     color: white;
+
   }
+
+  form {
+    margin-top: 0;  /* Remove top margin from form */
+    padding-top: 0;  /* Remove top padding from form */
+  }
+
+  .form-container {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
   
   .form-label {
     font-family: 'Poppins';
