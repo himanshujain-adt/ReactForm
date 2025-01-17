@@ -468,6 +468,7 @@ import { motion } from 'framer-motion';
 import './CandidateForm.css';
 import axios from 'axios';
 import Typed from 'typed.js';
+import uploadIcon from "../assets/upload-resume.png";
 
 const CandidateForm = () => {
   const [selectedDays, setSelectedDays] = useState([]);
@@ -583,6 +584,7 @@ const CandidateForm = () => {
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
+                style={{ fontWeight: 'bold' }}
               >
                 <div className="form-group">
                   <label
@@ -592,7 +594,7 @@ const CandidateForm = () => {
                   </label>
                   <input
                     type="text"
-                    className="form-control form-input rounded-3"
+                    className="form-control form-input rounded-3  bold-text "
                     placeholder="Enter target job title"
                     value={formData.jobTitles.join(', ')}
                     onChange={(e) => setFormData({ ...formData, jobTitles: e.target.value.split(',') })}
@@ -712,7 +714,7 @@ const CandidateForm = () => {
                       {days.map((day) => (
                         <div key={day} className="form-check mb-2">
                           <input
-                            className="form-check-input rounded-3"
+                            className="form-check-input rounded-3 border border-dark"
                             type="checkbox"
                             id={`${day.toLowerCase()}Checkbox`}
                             checked={selectedDays.includes(day)}
@@ -764,7 +766,7 @@ const CandidateForm = () => {
 
             <div className="exclusions mt-5">
               <h3 className="section-title">Exclusions:</h3>
-              <div className="row g-4 mt-2">
+              <div className="row g-4 mt-2 ">
                 {['Undesired Companies', 'Undesired Industries', 'Undesired Company Size', 'Undesired Location'].map((label) => (
                   <motion.div key={label}
                     className="col-md-6"
@@ -805,7 +807,8 @@ const CandidateForm = () => {
                 whileTap={{ scale: 0.95 }}  // Tap effect
                 transition={{ duration: 0.2 }}
               >
-                Upload Resume
+                <img src={uploadIcon} className="upload-icon" />
+                <span style={{ fontWeight: 'bold' }}>Upload Resume</span>
               </motion.button>
             </motion.div>
 
