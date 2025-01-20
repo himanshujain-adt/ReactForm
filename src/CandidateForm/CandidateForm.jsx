@@ -69,7 +69,7 @@ const CandidateForm = () => {
   const [file, setFile] = useState(null);  // To store the file object
   const [uploading, setUploading] = useState(false);  // To track if the file is being uploaded
   const [progress, setProgress] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false); 
+
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -173,11 +173,23 @@ const CandidateForm = () => {
     } else if (isNaN(formData.minimumSalary)) {
       newErrors.minimumSalary = 'Please enter a valid number for salary.';
     }
-    if (!formData.minimumScore.trim()) {
+    const score = formData.minimumScore.trim();
+
+    // Check if the score is empty
+    if (!score) {
       newErrors.minimumScore = 'Please enter a minimum score.';
-    } else if (isNaN(formData.minimumScore)) {
-      newErrors.minimumScore = 'Please enter a valid number for score.';
-    }
+    } else {
+      // Check if the score is a number or a valid percentage (with or without "%")
+      const numericScore = score.endsWith('%')
+        ? parseFloat(score.slice(0, -1)) // Remove "%" and convert to number
+        : parseFloat(score); // Otherwise, just convert to number
+
+      // Validate if the score is a valid number
+      if (isNaN(numericScore)) {
+        newErrors.minimumScore = 'Please enter a valid numeric value for the score.';
+      } else if (numericScore < 0 || numericScore > 100) {
+        newErrors.minimumScore = 'Score must be between 0 and 100.';
+      }
     // Desired Companies validation
     if (!formData.desiredCompanies.trim()) {
       newErrors.desiredCompanies = 'Please enter a desired company.';
@@ -194,6 +206,7 @@ const CandidateForm = () => {
     } else if (isNaN(formData.desiredCompanySize)) {
       newErrors.desiredCompanySize = 'Please enter a valid number for company size.';
     }
+  }
 
     // Desired Location validation
     if (!formData.desiredLocation.trim()) {
