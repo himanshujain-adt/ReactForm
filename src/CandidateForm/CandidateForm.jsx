@@ -1,33 +1,10 @@
-
-//code with api integration 
-
-import { ErrorMessage, Field, Form, Formik } from 'formik';
 import { motion } from 'framer-motion';
 import React, { useEffect, useRef, useState } from 'react';
 import Typed from 'typed.js';
-import * as Yup from 'yup';
 import uploadIcon from "../assets/upload-resume.png";
 import './CandidateForm.css';
 
 const CandidateForm = () => {
-
-  const validationSchema = Yup.object({
-    distributionList: Yup.string()
-      .required('Distribution List is required')
-      .test(
-        'is-valid-emails',
-        ' email are invalid',
-        (value) => {
-          if (!value) return false;
-          const emails = value.split(',').map((email) => email.trim());
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          return emails.every((email) => emailRegex.test(email));
-        }
-      ),
-    physicalLocation: Yup.string().required('Physical Location is required')
-      .matches(/^[a-zA-Z\\s]+$/, 'Physical Location can only contain letters and spaces')
-
-  });
 
   const [selectedDays, setSelectedDays] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -54,10 +31,14 @@ const CandidateForm = () => {
     desiredLocation: '',
     reportSchedule: '',
     jobLocation: '',
-
     undesiredIndustries: '',
     undesiredCompanySize: '',
     undesiredLocation: '',
+    distributionList: '',
+    physicalLocation: '',
+    candidateName: '',
+    candidateEmail: ''
+
 
   });
   const [isPopupVisible, setPopupVisible] = useState(false);
@@ -83,6 +64,10 @@ const CandidateForm = () => {
     undesiredIndustries: '',
     undesiredCompanySize: '',
     undesiredLocation: '',
+    distributionList: '',
+    physicalLocation: '',
+    candidateName: '',
+    candidateEmail: ''
 
   });
   const dropdownRef = useRef(null);
@@ -112,7 +97,7 @@ const CandidateForm = () => {
     }
   };
 
-  // Simulate the file upload progress
+
   // Simulate the file upload progress
   const simulateUploadProgress = () => {
     let uploaded = 0;
@@ -196,6 +181,11 @@ const CandidateForm = () => {
       undesiredIndustries: '',
       undesiredCompanySize: '',
       undesiredLocation: '',
+      distributionList: '',
+      physicalLocation: '',
+      candidateName: '',
+      candidateEmail: ''
+
 
 
     };
@@ -204,6 +194,35 @@ const CandidateForm = () => {
     if (!formData.jobTitles || formData.jobTitles.length === 0) {
       newErrors.jobTitles = 'Please enter at least one job title.';
     }
+
+    if (!formData.distributionList || formData.distributionList.length === 0) {
+      newErrors.distributionList = 'Distribution List is required';
+    }
+    else {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+      if (!emailRegex.test(formData.distributionList)) {
+        newErrors.distributionList = 'Invalid email format';
+      }
+    }
+
+    if (!formData.physicalLocation || formData.physicalLocation.length === 0) {
+      newErrors.physicalLocation = 'Physical Location is required';
+    }
+    if (!formData.candidateName || formData.candidateName.length === 0) {
+      newErrors.candidateName = 'Candidate Name is required';
+    }
+    if (!formData.candidateEmail || formData.candidateEmail.length === 0) {
+      newErrors.candidateEmail = 'Email is required';
+    }
+    else {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+      if (!emailRegex.test(formData.candidateEmail)) {
+        newErrors.candidateEmail = 'Invalid email format';
+      }
+    }
+
 
     if (!file) {
       newErrors.resume = 'Please upload your resume';
@@ -221,41 +240,17 @@ const CandidateForm = () => {
     if (!score) {
       newErrors.minimumScore = 'Please enter a minimum score.';
     } else {
-      // Check if the score is a number or a valid percentage (with or without "%")
-      const numericScore = score.endsWith('%')
-        ? parseFloat(score.slice(0, -1)) // Remove "%" and convert to number
-        : parseFloat(score); // Otherwise, just convert to number
 
-      // Validate if the score is a valid number
+      const numericScore = score.endsWith('%')
+        ? parseFloat(score.slice(0, -1))
+        : parseFloat(score);
+
       if (isNaN(numericScore)) {
         newErrors.minimumScore = 'Please enter a valid numeric value for the score.';
       } else if (numericScore < 0 || numericScore > 100) {
         newErrors.minimumScore = 'Score must be between 0 and 100.';
       }
     }
-    // // Validation for Desired Companies
-    // if (!formData.desiredCompanies.trim()) {
-    //   newErrors.desiredCompanies = 'Please enter desired companies';
-    // } else if (formData.desiredCompanies.length < 2) {
-    //   newErrors.desiredCompanies = 'Company name must be at least 2 characters';
-    // }
-    // // Validation for Desired Industries
-    // if (!formData.desiredIndustries.trim()) {
-    //   newErrors.desiredIndustries = 'Please enter desired industries';
-    // } else if (formData.desiredIndustries.length < 2) {
-    //   newErrors.desiredIndustries = 'Industry name must be at least 2 characters';
-    // }
-    // // Validation for Desired Company Size
-    // if (!formData.desiredCompanySize.trim()) {
-    //   newErrors.desiredCompanySize = 'Please enter desired company size';
-    // }
-
-    // // Validation for Desired Location
-    // if (!formData.desiredLocation.trim()) {
-    //   newErrors.desiredLocation = 'Please enter desired location';
-    // } else if (formData.desiredLocation.length < 2) {
-    //   newErrors.desiredLocation = 'Location must be at least 2 characters';
-    // }
 
     // Job Type validation
     if (selectedJobTypes.length === 0) {
@@ -274,29 +269,6 @@ const CandidateForm = () => {
     if (selectedLocations.length === 0) {
       newErrors.jobLocation = 'Please select at least one job location';
     }
-  //   // Validation for Undesired Companies
-  //  if (formData.undesiredCompanies.length < 2) {
-  //     newErrors.undesiredCompanies = 'Company name must be at least 2 characters';
-  //   }
-
-  //   // Validation for Undesired Industries
-  //   if (!formData.undesiredIndustries.trim()) {
-  //     newErrors.undesiredIndustries = 'Please enter undesired industries';
-  //   } else if (formData.undesiredIndustries.length < 2) {
-  //     newErrors.undesiredIndustries = 'Industry name must be at least 2 characters';
-  //   }
-
-  //   // Validation for Undesired Company Size
-  //   if (!formData.undesiredCompanySize.trim()) {
-  //     newErrors.undesiredCompanySize = 'Please enter undesired company size';
-  //   }
-
-  //   // Validation for Undesired Location
-  //   if (!formData.undesiredLocation.trim()) {
-  //     newErrors.undesiredLocation = 'Please enter undesired location';
-  //   } else if (formData.undesiredLocation.length < 2) {
-  //     newErrors.undesiredLocation = 'Location must be at least 2 characters';
-  //   }
 
 
     setErrors(newErrors);
@@ -313,7 +285,6 @@ const CandidateForm = () => {
     if (validationErrors) {
       setPopupVisible(true);
     }
-
 
     console.log('Form submitted:', formData);
     // const payload = {
@@ -345,25 +316,49 @@ const CandidateForm = () => {
       setFormData({ ...formData, jobTitles: value });
     }
   };
+  const handleDistributionListChange = (e) => {
+    const value = e.target.value;
+    setFormData({ ...formData, distributionList: value });
 
-  // const handleDistributionList = (e) => {
-  //   const value = e.target.value;
+  };
+  const handlePhysicalLocationChange = (e) => {
+    const value = e.target.value;
 
-  //   // Regular expression to allow only alphabets and spaces
-  //   const regex = /^[a-zA-Z\s]*$/;
+    // Regular expression to allow only alphabets and spaces
+    const regex = /^[a-zA-Z\s]*$/;
 
-  //   // If input matches the regex, update the state
-  //   if (regex.test(value)) {
-  //     setFormData({ ...formData, distributionList: value });
-  //   }
-  // };
+    // If input matches the regex, update the state
+    if (regex.test(value)) {
+      setFormData({ ...formData, physicalLocation: value });
+    }
+
+  };
+  const handleCandidateNameChange = (e) => {
+    const value = e.target.value;
+
+    // Regular expression to allow only alphabets and spaces
+    const regex = /^[a-zA-Z\s]*$/;
+
+    // If input matches the regex, update the state
+    if (regex.test(value)) {
+      setFormData({ ...formData, candidateName: value });
+    }
+
+  };
+  const handleCandidateEmailChange = (e) => {
+    const value = e.target.value;
+    setFormData({ ...formData, candidateEmail: value });
+  };
 
   const handleSalaryChange = (e) => {
     setFormData({ ...formData, minimumSalary: e.target.value });
   };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+
+    // setFormData({...formData,minimumScore:e.target.value})
   };
 
 
@@ -384,14 +379,71 @@ const CandidateForm = () => {
 
           <form onSubmit={handleFormSubmit}>
             <div className="row g-4">
+              {/* Candidate Name */}
+              <motion.div
+                className="col-md-6"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                style={{}}
+              >
 
+
+                <div className="form-group">
+                  <label
+                    className="form-label"
+                  >
+                    Candidate Name
+                  </label>
+                  <input
+                    type="text"
+                    className={`form-control form-input rounded-3 bold-text ${errors.candidateName ? 'is-invalid' : ''}`}
+                    placeholder="e.g John Doe"
+                    value={formData.candidateName}
+                    onChange={handleCandidateNameChange}
+                  />
+
+                  {errors.candidateName && <div className="invalid-feedback">{errors.candidateName}</div>}
+
+
+                </div>
+              </motion.div>
+              {/* Candidate Email */}
+              <motion.div
+                className="col-md-6"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                style={{}}
+              >
+
+
+                <div className="form-group">
+                  <label
+                    className="form-label"
+                  >
+                    Candidate Email
+                  </label>
+                  <input
+                    type="text"
+                    className={`form-control form-input rounded-3 bold-text ${errors.candidateEmail ? 'is-invalid' : ''}`}
+                    placeholder="e.g johndoe@gmail.com"
+                    value={formData.candidateEmail}
+                    onChange={handleCandidateEmailChange}
+                  />
+
+                  {errors.candidateEmail && <div className="invalid-feedback">{errors.candidateEmail}</div>}
+
+
+                </div>
+              </motion.div>
               {/* Target Job Title */}
               <motion.div
                 className="col-md-6"
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                style={{ }}
+                style={{}}
               >
 
 
@@ -408,7 +460,7 @@ const CandidateForm = () => {
                     value={formData.jobTitles}
                     onChange={handleJobTitleChange}
                   />
-       
+
                   {errors.jobTitles && <div className="invalid-feedback">{errors.jobTitles}</div>}
 
 
@@ -491,78 +543,61 @@ const CandidateForm = () => {
               </motion.div>
 
               {/* Distribution  List*/}
+
               <motion.div
                 className="col-md-6"
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                style={{ }}
+                style={{}}
               >
-                <Formik
-                  initialValues={{ distributionList: '' }}
-                  validationSchema={validationSchema}
-                  onSubmit={handleFormSubmit}
-                >
-                  {({ errors, touched }) => (
-                    <Form>
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="distributionList">
-                          Distribution List:
-                        </label>
-                        <Field
-                          type="text"
-                          name="distributionList"
-                          className={`form-control form-input rounded-3  ${touched.distributionList && errors.distributionList ? 'is-invalid' : ''
-                            }`}
-                          placeholder="e.g. Emails to receive the results"
-                        />
-                        <ErrorMessage
-                          name="distributionList"
-                          component="div"
-                          className="invalid-feedback"
-                        />
-                      </div>
+                <div className="form-group">
+                  <label
+                    className="form-label"
+                  >
+                    Distribution List:
+                  </label>
+                  <input
+                    type="text"
+                    className={`form-control form-input rounded-3 bold-text ${errors.distributionList ? 'is-invalid' : ''}`}
+                    placeholder="e.g. Emails to receive the results"
+                    value={formData.distributionList}
+                    onChange={handleDistributionListChange}
+                  />
 
-                    </Form>
-                  )}
-                </Formik>
+                  {errors.distributionList && <div className="invalid-feedback">{errors.distributionList}</div>}
+
+
+                </div>
               </motion.div>
+
               {/* Physical Location */}
+
+
               <motion.div
                 className="col-md-6"
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                style={{ }}
+                style={{}}
               >
-                <Formik
-                  initialValues={{ physicalLocation: '' }}
-                  validationSchema={validationSchema}
-                  onSubmit={handleFormSubmit}
-                >
-                  {({ errors, touched }) => (
-                    <Form>
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="physicalLocation">
-                          Physical Location:
-                        </label>
-                        <Field
-                          type="text"
-                          name="physicalLocation"
-                          className={`form-control form-input rounded-3  ${touched.physicalLocation && errors.physicalLocation ? 'is-invalid' : ''
-                            }`}
-                          placeholder="e.g Physical Location"
-                        />
-                        <ErrorMessage
-                          name="physicalLocation"
-                          component="div"
-                          className="invalid-feedback"
-                        />
-                      </div>
+                <div className="form-group">
+                  <label
+                    className="form-label"
+                  >
+                    Physical Location
+                  </label>
+                  <input
+                    type="text"
+                    className={`form-control form-input rounded-3 bold-text ${errors.physicalLocation ? 'is-invalid' : ''}`}
+                    placeholder="e.g. New York"
+                    value={formData.physicalLocation}
+                    onChange={handlePhysicalLocationChange}
+                  />
+                  {errors.physicalLocation && <div className="invalid-feedback">{errors.physicalLocation}</div>}
 
-                    </Form>
-                  )}
-                </Formik>
+
+                </div>
               </motion.div>
               {/* Minimum Salary */}
               <motion.div
@@ -748,7 +783,7 @@ const CandidateForm = () => {
               </motion.div>
             </div>
 
-            <div className="inclusions mt-5">
+            {/* <div className="inclusions mt-5">
               <h3 className="section-title">Inclusions:</h3>
               <div className="row g-4 mt-2">
                 {[
@@ -815,10 +850,10 @@ const CandidateForm = () => {
                   </motion.div>
                 ))}
               </div>
-            </div>
+            </div> */}
 
 
-            <div className="exclusions mt-5">
+            {/* <div className="exclusions mt-5">
               <h3 className="section-title">Exclusions:</h3>
               <div className="row g-4 mt-2">
                 {[
@@ -867,6 +902,141 @@ const CandidateForm = () => {
                 ))}
               </div>
 
+            </div> */}
+            <div className="inclusions mt-5">
+              <h3 className="section-title">Inclusions:</h3>
+              <div className="row g-4 mt-2">
+                {[
+                  {
+                    label: 'Desired Companies',
+                    placeholder: 'e.g Microsoft',
+                    name: 'desiredCompanies',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Desired Industries',
+                    placeholder: 'e.g IT ',
+                    name: 'desiredIndustries',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Desired Company Size',
+                    placeholder: 'e.g Multinational',
+                    name: 'desiredCompanySize',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Desired Location',
+                    placeholder: 'e.g London',
+                    name: 'desiredLocation',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  }
+                ].map(({ label, placeholder, name, pattern }) => (
+                  <motion.div
+                    key={label}
+                    className="col-md-6"
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 1 }}
+                  >
+                    <div className="form-group">
+                      <label className="form-label">{label}</label>
+                      <motion.input
+                        type="text"
+                        className={`form-control form-input rounded-3 ${errors[name] ? 'is-invalid' : ''}`}
+                        placeholder={placeholder}
+                        pattern={pattern}
+                        value={formData[name]}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || new RegExp(pattern).test(value)) {
+                            setFormData({ ...formData, [name]: value });
+                            if (errors[name]) {
+                              setErrors(prev => ({
+                                ...prev,
+                                [name]: ''
+                              }));
+                            }
+                          }
+                        }}
+                      />
+                      {errors[name] && (
+                        <div className="invalid-feedback d-block">
+                          {errors[name]}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            <div className="exclusions mt-5">
+              <h3 className="section-title">Exclusions:</h3>
+              <div className="row g-4 mt-2">
+                {[
+                  {
+                    label: 'Undesired Companies',
+                    placeholder: 'e.g Deloitte Consulting ',
+                    name: 'undesiredCompanies',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Undesired Industries',
+                    placeholder: 'e.g Finance',
+                    name: 'undesiredIndustries',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Undesired Company Size',
+                    placeholder: 'e.g Startup',
+                    name: 'undesiredCompanySize',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Undesired Location',
+                    placeholder: 'e.g New York',
+                    name: 'undesiredLocation',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  }
+                ].map(({ label, placeholder, name, pattern }) => (
+                  <motion.div
+                    key={label}
+                    className="col-md-6"
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, delay: 1.2 }}
+                  >
+                    <div className="form-group">
+                      <label className="form-label">{label}</label>
+                      <motion.input
+                        type="text"
+                        className={`form-control form-input rounded-3 ${errors[name] ? 'is-invalid' : ''}`}
+                        placeholder={placeholder}
+                        pattern={pattern}
+                        value={formData[name]}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || new RegExp(pattern).test(value)) {
+                            setFormData({ ...formData, [name]: value });
+                            if (errors[name]) {
+                              setErrors(prev => ({
+                                ...prev,
+                                [name]: ''
+                              }));
+                            }
+                          }
+                        }}
+                      />
+                      {errors[name] && (
+                        <div className="invalid-feedback d-block">
+                          {errors[name]}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
 
 
