@@ -1,14 +1,13 @@
-
-//code with api integration 
-
-import React, { useEffect, useRef, useState } from 'react';
-
 import { motion } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
 import Typed from 'typed.js';
 import uploadIcon from "../assets/upload-resume.png";
 import './CandidateForm.css';
+// import { LuMailSearch } from "react-icons/lu";
+import { FaSearch } from "react-icons/fa";
 
 const CandidateForm = () => {
+
   const [selectedDays, setSelectedDays] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -34,10 +33,15 @@ const CandidateForm = () => {
     desiredLocation: '',
     reportSchedule: '',
     jobLocation: '',
-    undesiredCompanies: '',
     undesiredIndustries: '',
     undesiredCompanySize: '',
     undesiredLocation: '',
+    distributionList: '',
+    physicalLocation: '',
+    candidateName: '',
+    candidateEmail: ''
+
+
   });
   const [isPopupVisible, setPopupVisible] = useState(false);
 
@@ -62,7 +66,10 @@ const CandidateForm = () => {
     undesiredIndustries: '',
     undesiredCompanySize: '',
     undesiredLocation: '',
-
+    distributionList: '',
+    physicalLocation: '',
+    candidateName: '',
+    candidateEmail: ''
 
   });
   const dropdownRef = useRef(null);
@@ -92,7 +99,7 @@ const CandidateForm = () => {
     }
   };
 
-  // Simulate the file upload progress
+
   // Simulate the file upload progress
   const simulateUploadProgress = () => {
     let uploaded = 0;
@@ -138,6 +145,8 @@ const CandidateForm = () => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
+        setIsJobTypeOpen(false);
+        setIsLocationOpen(false);
       }
     };
 
@@ -176,13 +185,48 @@ const CandidateForm = () => {
       undesiredIndustries: '',
       undesiredCompanySize: '',
       undesiredLocation: '',
-      
+      distributionList: '',
+      physicalLocation: '',
+      candidateName: '',
+      candidateEmail: ''
+
+
+
     };
 
     // Validation rule: jobTitles should not be empty and should contain at least one job title
     if (!formData.jobTitles || formData.jobTitles.length === 0) {
       newErrors.jobTitles = 'Please enter at least one job title.';
     }
+
+    if (!formData.distributionList || formData.distributionList.length === 0) {
+      newErrors.distributionList = 'Distribution List is required';
+    }
+    else {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+      if (!emailRegex.test(formData.distributionList)) {
+        newErrors.distributionList = 'Invalid email format';
+      }
+    }
+
+    if (!formData.physicalLocation || formData.physicalLocation.length === 0) {
+      newErrors.physicalLocation = 'Physical Location is required';
+    }
+    if (!formData.candidateName || formData.candidateName.length === 0) {
+      newErrors.candidateName = 'Candidate Name is required';
+    }
+    if (!formData.candidateEmail || formData.candidateEmail.length === 0) {
+      newErrors.candidateEmail = 'Email is required';
+    }
+    else {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+      if (!emailRegex.test(formData.candidateEmail)) {
+        newErrors.candidateEmail = 'Invalid email format';
+      }
+    }
+
 
     if (!file) {
       newErrors.resume = 'Please upload your resume';
@@ -193,47 +237,27 @@ const CandidateForm = () => {
       newErrors.minimumSalary = 'Please enter a minimum salary.';
     } else if (isNaN(formData.minimumSalary)) {
       newErrors.minimumSalary = 'Please enter a valid number for salary.';
+    } else if (parseFloat(formData.minimumSalary) < 25000) { // Check if salary is less than 25000
+      newErrors.minimumSalary = 'The minimum salary should be at least 25000.';
     }
+   
+    
     const score = formData.minimumScore.trim();
 
     // Check if the score is empty
     if (!score) {
       newErrors.minimumScore = 'Please enter a minimum score.';
     } else {
-      // Check if the score is a number or a valid percentage (with or without "%")
-      const numericScore = score.endsWith('%')
-        ? parseFloat(score.slice(0, -1)) // Remove "%" and convert to number
-        : parseFloat(score); // Otherwise, just convert to number
 
-      // Validate if the score is a valid number
+      const numericScore = score.endsWith('%')
+        ? parseFloat(score.slice(0, -1))
+        : parseFloat(score);
+
       if (isNaN(numericScore)) {
         newErrors.minimumScore = 'Please enter a valid numeric value for the score.';
       } else if (numericScore < 0 || numericScore > 100) {
         newErrors.minimumScore = 'Score must be between 0 and 100.';
       }
-    }
-    // Validation for Desired Companies
-    if (!formData.desiredCompanies.trim()) {
-      newErrors.desiredCompanies = 'Please enter desired companies';
-    } else if (formData.desiredCompanies.length < 2) {
-      newErrors.desiredCompanies = 'Company name must be at least 2 characters';
-    }
-    // Validation for Desired Industries
-    if (!formData.desiredIndustries.trim()) {
-      newErrors.desiredIndustries = 'Please enter desired industries';
-    } else if (formData.desiredIndustries.length < 2) {
-      newErrors.desiredIndustries = 'Industry name must be at least 2 characters';
-    }
-    // Validation for Desired Company Size
-    if (!formData.desiredCompanySize.trim()) {
-      newErrors.desiredCompanySize = 'Please enter desired company size';
-    }
-
-    // Validation for Desired Location
-    if (!formData.desiredLocation.trim()) {
-      newErrors.desiredLocation = 'Please enter desired location';
-    } else if (formData.desiredLocation.length < 2) {
-      newErrors.desiredLocation = 'Location must be at least 2 characters';
     }
 
     // Job Type validation
@@ -253,31 +277,6 @@ const CandidateForm = () => {
     if (selectedLocations.length === 0) {
       newErrors.jobLocation = 'Please select at least one job location';
     }
-    // Validation for Undesired Companies
-    if (!formData.undesiredCompanies.trim()) {
-      newErrors.undesiredCompanies = 'Please enter undesired companies';
-    } else if (formData.undesiredCompanies.length < 2) {
-      newErrors.undesiredCompanies = 'Company name must be at least 2 characters';
-    }
-
-    // Validation for Undesired Industries
-    if (!formData.undesiredIndustries.trim()) {
-      newErrors.undesiredIndustries = 'Please enter undesired industries';
-    } else if (formData.undesiredIndustries.length < 2) {
-      newErrors.undesiredIndustries = 'Industry name must be at least 2 characters';
-    }
-
-    // Validation for Undesired Company Size
-    if (!formData.undesiredCompanySize.trim()) {
-      newErrors.undesiredCompanySize = 'Please enter undesired company size';
-    }
-
-    // Validation for Undesired Location
-    if (!formData.undesiredLocation.trim()) {
-      newErrors.undesiredLocation = 'Please enter undesired location';
-    } else if (formData.undesiredLocation.length < 2) {
-      newErrors.undesiredLocation = 'Location must be at least 2 characters';
-    }
 
 
     setErrors(newErrors);
@@ -291,11 +290,10 @@ const CandidateForm = () => {
     const validationErrors = validate();
     console.log('Validation Errors:', validationErrors);
 
-    if(validationErrors){
+    if (validationErrors) {
       setPopupVisible(true);
     }
-    
-    
+
     console.log('Form submitted:', formData);
     // const payload = {
     //   prefs: formData,
@@ -319,22 +317,56 @@ const CandidateForm = () => {
     const value = e.target.value;
 
     // Regular expression to allow only alphabets and spaces
-    const regex = /^[a-zA-Z ]*$/;
+    const regex = /^[a-zA-Z\s]*$/;
 
-
-
-    // If input matches the regex (only alphabets and spaces), update the state
+    // If input matches the regex, update the state
     if (regex.test(value)) {
-      setFormData({ ...formData, jobTitles: value.split(' ').filter(Boolean) });
+      setFormData({ ...formData, jobTitles: value });
     }
+  };
+  const handleDistributionListChange = (e) => {
+    const value = e.target.value;
+    setFormData({ ...formData, distributionList: value });
+
+  };
+  const handlePhysicalLocationChange = (e) => {
+    const value = e.target.value;
+
+    // Regular expression to allow only alphabets and spaces
+    const regex = /^[a-zA-Z\s]*$/;
+
+    // If input matches the regex, update the state
+    if (regex.test(value)) {
+      setFormData({ ...formData, physicalLocation: value });
+    }
+
+  };
+  const handleCandidateNameChange = (e) => {
+    const value = e.target.value;
+
+    // Regular expression to allow only alphabets and spaces
+    const regex = /^[a-zA-Z\s]*$/;
+
+    // If input matches the regex, update the state
+    if (regex.test(value)) {
+      setFormData({ ...formData, candidateName: value });
+    }
+
+  };
+  const handleCandidateEmailChange = (e) => {
+    const value = e.target.value;
+    setFormData({ ...formData, candidateEmail: value });
   };
 
   const handleSalaryChange = (e) => {
     setFormData({ ...formData, minimumSalary: e.target.value });
   };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+
+   
   };
 
 
@@ -355,13 +387,119 @@ const CandidateForm = () => {
 
           <form onSubmit={handleFormSubmit}>
             <div className="row g-4">
+              {/* Candidate Name */}
+              <motion.div
+                className="col-md-6"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                style={{}}
+              >
+
+
+                <div className="form-group">
+                  <label
+                    className="form-label"
+                  >
+                    Candidate Name
+                  </label>
+                  <input
+                    type="text"
+                    className={`form-control form-input rounded-3 bold-text ${errors.candidateName ? 'is-invalid' : ''}`}
+                    placeholder="e.g John Doe"
+                    value={formData.candidateName}
+                    onChange={handleCandidateNameChange}
+                  />
+
+                  {errors.candidateName && <div className="invalid-feedback">{errors.candidateName}</div>}
+
+
+                </div>
+              </motion.div>
+              {/* Candidate Email */}
+              {/* <motion.div
+                className="col-md-6"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                style={{}}
+              >
+
+
+                <div className="form-group" style={{ display: "flex" }}>
+                  <div>
+                    <label
+                      className="form-label"
+                    >
+                      Candidate Email
+                    </label>
+                   
+                    <input
+                      type="text"
+                      className={`form-control form-input rounded-3 bold-text ${errors.candidateEmail ? 'is-invalid' : ''}`}
+                      placeholder="e.g johndoe@gmail.com"
+                      value={formData.candidateEmail}
+                      onChange={handleCandidateEmailChange}
+
+                    />
+
+                    {errors.candidateEmail && <div className="invalid-feedback">{errors.candidateEmail}</div>}
+                  </div>
+                 
+                    <LuMailSearch style={{ float: "bottom", marginLeft: "5px", marginTop: "35px", color: "blue" }} size={35} />
+               
+                </div>
+
+              </motion.div> */}
+              <motion.div
+  className="col-md-6"
+  initial={{ opacity: 0, x: -50 }}
+  animate={{ opacity: 1, x: 0 }}
+  transition={{ duration: 0.6, delay: 0.2 }}
+  style={{}}
+>
+  <div className="form-group" style={{ display: "flex", position: "relative" }}>
+    <div style={{ width: "100%" }}>
+      <label className="form-label">
+        Candidate Email
+      </label>
+
+      <input
+        type="text"
+        className={`form-control form-input rounded-3 bold-text ${errors.candidateEmail ? 'is-invalid' : ''}`}
+        placeholder="e.g johndoe@gmail.com"
+        value={formData.candidateEmail}
+        onChange={handleCandidateEmailChange}
+        style={{ paddingRight: "40px" }}  // Add padding for space for the icon
+      />
+
+      {errors.candidateEmail && <div className="invalid-feedback">{errors.candidateEmail}</div>}
+    </div>
+
+    {/* Icon positioned inside the input field */}
+    <FaSearch  
+      style={{
+        position: "absolute",
+        right: "20px",
+        top: "60%",
+    
+       
+        color: "grey",
+        cursor: "pointer"
+      }} 
+      size={25} 
+      title='search'
+    />
+  </div>
+</motion.div>
+
               {/* Target Job Title */}
               <motion.div
                 className="col-md-6"
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                style={{ fontWeight: 'bold' }}
+                style={{}}
               >
 
 
@@ -375,9 +513,10 @@ const CandidateForm = () => {
                     type="text"
                     className={`form-control form-input rounded-3 bold-text ${errors.jobTitles ? 'is-invalid' : ''}`}
                     placeholder="e.g Java Developer"
-                    value={formData.jobTitles.join(', ')}
-                    onChange={handleJobTitleChange}  // Update the handler here
+                    value={formData.jobTitles}
+                    onChange={handleJobTitleChange}
                   />
+
                   {errors.jobTitles && <div className="invalid-feedback">{errors.jobTitles}</div>}
 
 
@@ -459,7 +598,63 @@ const CandidateForm = () => {
                 </div>
               </motion.div>
 
-              {/* Minimum Salary */}
+              {/* Distribution  List*/}
+
+              <motion.div
+                className="col-md-6"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                style={{}}
+              >
+                <div className="form-group">
+                  <label
+                    className="form-label"
+                  >
+                    Distribution List:
+                  </label>
+                  <input
+                    type="text"
+                    className={`form-control form-input rounded-3 bold-text ${errors.distributionList ? 'is-invalid' : ''}`}
+                    placeholder="e.g. Emails to receive the results"
+                    value={formData.distributionList}
+                    onChange={handleDistributionListChange}
+                  />
+
+                  {errors.distributionList && <div className="invalid-feedback">{errors.distributionList}</div>}
+
+
+                </div>
+              </motion.div>
+
+              {/* Physical Location */}
+
+
+              <motion.div
+                className="col-md-6"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                style={{}}
+              >
+                <div className="form-group">
+                  <label
+                    className="form-label"
+                  >
+                    Physical Location
+                  </label>
+                  <input
+                    type="text"
+                    className={`form-control form-input rounded-3 bold-text ${errors.physicalLocation ? 'is-invalid' : ''}`}
+                    placeholder="e.g. New York"
+                    value={formData.physicalLocation}
+                    onChange={handlePhysicalLocationChange}
+                  />
+                  {errors.physicalLocation && <div className="invalid-feedback">{errors.physicalLocation}</div>}
+
+
+                </div>
+              </motion.div>
               {/* Minimum Salary */}
               <motion.div
                 className="col-md-6"
@@ -468,9 +663,9 @@ const CandidateForm = () => {
                 transition={{ duration: 0.6, delay: 0.6 }}
               >
                 <div className="form-group">
-                  <label className="form-label">Minimum Salary</label>
+                  <label className="form-label">Minimum Salary ($)</label>
                   <motion.input
-                    type="number"
+                    type="text"
                     className={`form-control form-input rounded-3 ${errors.minimumSalary ? 'is-invalid' : ''}`}
                     placeholder="e.g 25000"
                     value={formData.minimumSalary}
@@ -495,7 +690,7 @@ const CandidateForm = () => {
                   <motion.input
                     type="text"
                     className={`form-control form-input rounded-3 ${errors.minimumScore ? 'is-invalid' : ''}`}
-                    placeholder="e.g 75%"
+                    placeholder="e.g  No job below score 75%"
                     name="minimumScore"
                     value={formData.minimumScore}
                     onChange={handleInputChange}
@@ -518,7 +713,7 @@ const CandidateForm = () => {
                   <label className="form-label">Job Type</label>
                   <div className={`dropdown ${errors.jobType ? 'is-invalid' : ''}`} ref={dropdownRef}>
                     <motion.button
-                      className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${errors.jobType ? 'border-danger' : ''
+                      className={`btn custom-dropdown-button dropdown-toggle w-100  ${errors.jobType ? 'border-danger' : ''
                         }`}
                       type="button"
                       onClick={() => setIsJobTypeOpen(!isJobTypeOpen)}
@@ -644,33 +839,34 @@ const CandidateForm = () => {
               </motion.div>
             </div>
 
+        
             <div className="inclusions mt-5">
               <h3 className="section-title">Inclusions:</h3>
               <div className="row g-4 mt-2">
                 {[
                   {
                     label: 'Desired Companies',
-                    placeholder: 'e.g TCS',
+                    placeholder: 'e.g Microsoft',
                     name: 'desiredCompanies',
-                    pattern: "^[a-zA-Z\\s]+$"
+                    pattern: "^[a-zA-Z0-9\\s]+$"
                   },
                   {
                     label: 'Desired Industries',
-                    placeholder: 'e.g IT Sector',
+                    placeholder: 'e.g IT ',
                     name: 'desiredIndustries',
-                    pattern: "^[a-zA-Z\\s]+$"
+                    pattern: "^[a-zA-Z0-9\\s]+$"
                   },
                   {
                     label: 'Desired Company Size',
-                    placeholder: 'e.g Start Up',
+                    placeholder: 'e.g Multinational',
                     name: 'desiredCompanySize',
-                    pattern: "^[a-zA-Z\\s]+$"
+                    pattern: "^[a-zA-Z0-9\\s]+$"
                   },
                   {
                     label: 'Desired Location',
-                    placeholder: 'e.g Indore',
+                    placeholder: 'e.g London',
                     name: 'desiredLocation',
-                    pattern: "^[a-zA-Z\\s]+$"
+                    pattern: "^[a-zA-Z0-9\\s]+$"
                   }
                 ].map(({ label, placeholder, name, pattern }) => (
                   <motion.div
@@ -690,10 +886,8 @@ const CandidateForm = () => {
                         value={formData[name]}
                         onChange={(e) => {
                           const value = e.target.value;
-                          // Only allow letters, numbers, commas, and spaces based on the pattern
                           if (value === '' || new RegExp(pattern).test(value)) {
                             setFormData({ ...formData, [name]: value });
-                            // Clear error when user starts typing
                             if (errors[name]) {
                               setErrors(prev => ({
                                 ...prev,
@@ -702,13 +896,72 @@ const CandidateForm = () => {
                             }
                           }
                         }}
-                        onBlur={(e) => {
-                          // Validate on blur
-                          if (!e.target.value.trim()) {
-                            setErrors(prev => ({
-                              ...prev,
-                              [name]: `Please enter ${label.toLowerCase()}`
-                            }));
+                      />
+                      {errors[name] && (
+                        <div className="invalid-feedback d-block">
+                          {errors[name]}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            <div className="exclusions mt-5">
+              <h3 className="section-title">Exclusions:</h3>
+              <div className="row g-4 mt-2">
+                {[
+                  {
+                    label: 'Undesired Companies',
+                    placeholder: 'e.g Deloitte Consulting ',
+                    name: 'undesiredCompanies',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Undesired Industries',
+                    placeholder: 'e.g Finance',
+                    name: 'undesiredIndustries',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Undesired Company Size',
+                    placeholder: 'e.g Startup',
+                    name: 'undesiredCompanySize',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Undesired Location',
+                    placeholder: 'e.g New York',
+                    name: 'undesiredLocation',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  }
+                ].map(({ label, placeholder, name, pattern }) => (
+                  <motion.div
+                    key={label}
+                    className="col-md-6"
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, delay: 1.2 }}
+                  >
+                    <div className="form-group">
+                      <label className="form-label">{label}</label>
+                      <motion.input
+                        type="text"
+                        className={`form-control form-input rounded-3 ${errors[name] ? 'is-invalid' : ''}`}
+                        placeholder={placeholder}
+                        pattern={pattern}
+                        value={formData[name]}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || new RegExp(pattern).test(value)) {
+                            setFormData({ ...formData, [name]: value });
+                            if (errors[name]) {
+                              setErrors(prev => ({
+                                ...prev,
+                                [name]: ''
+                              }));
+                            }
                           }
                         }}
                       />
@@ -724,58 +977,6 @@ const CandidateForm = () => {
             </div>
 
 
-            <div className="exclusions mt-5">
-              <h3 className="section-title">Exclusions:</h3>
-              <div className="row g-4 mt-2">
-  {[
-    { label: 'Undesired Companies', placeholder: 'e.g Infosys', name: 'undesiredCompanies' },
-    { label: 'Undesired Industries', placeholder: 'e.g Pharmaceutical', name: 'undesiredIndustries' },
-    { label: 'Undesired Company Size', placeholder: 'e.g MNC', name: 'undesiredCompanySize' },
-    { label: 'Undesired Location', placeholder: 'e.g Delhi', name: 'undesiredLocation' }
-  ].map(({ label, placeholder, name }) => (
-    <motion.div
-      key={label}
-      className="col-md-6"
-      initial={{ opacity: 0, x: 50 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.8, delay: 1.2 }}
-    >
-      <div className="form-group">
-        <label className="form-label">{label}</label>
-        <motion.input
-          type="text"
-          className={`form-control form-input rounded-3 ${errors[name] ? 'is-invalid' : ''}`}
-          placeholder={placeholder}
-          value={formData[name]}
-          onChange={(e) => {
-            const value = e.target.value;
-            setFormData({ ...formData, [name]: value });
-            if (errors[name]) {
-              setErrors({ ...errors, [name]: '' });
-            }
-          }}
-          onBlur={(e) => {
-            const value = e.target.value.trim();
-            if (!value) {
-              setErrors((prevErrors) => ({
-                ...prevErrors,
-                [name]: `Please enter ${label.toLowerCase()}`,
-              }));
-            }
-          }}
-          pattern="^[a-zA-Z\s]+$"  // Added pattern here to allow only alphabets and spaces
-        />
-        {errors[name] && (
-          <div className="invalid-feedback d-block">{errors[name]}</div>
-        )}
-      </div>
-    </motion.div>
-  ))}
-</div>
-
-            </div>
-
-
 
 
             {/* Upload Button with Bounce */}
@@ -786,7 +987,7 @@ const CandidateForm = () => {
               transition={{ type: "spring", stiffness: 200, damping: 10 }}
             >
 
-              <button  type="button" className="btn upload-button">
+              <button type="button" className="btn upload-button">
 
                 <label htmlFor="resume" className="upload-label" style={{ display: 'flex', alignItems: 'center' }}>
                   <input
@@ -796,13 +997,13 @@ const CandidateForm = () => {
                     name="resume"
                     style={{ display: 'none' }}  // Hide the file input
                     onChange={handleFileChange}
-                    // Handle file selection
-                    />
-  
+                  // Handle file selection
+                  />
+
                   <img src={uploadIcon} className="upload-icon" style={{ width: '20px', height: '20px' }} />
                   <span style={{ fontWeight: 'bold' }}>Upload Resume</span>
-                  
-                </label>                      
+
+                </label>
 
               </button>
 
@@ -810,7 +1011,7 @@ const CandidateForm = () => {
                 <div style={{ marginTop: '10px', fontWeight: 'bold', color: '#333', display: 'flex', alignItems: 'center' }}>
                   <p>{fileName}</p>
                 </div>
-                
+
               )}
 
               {uploading && (
@@ -828,7 +1029,7 @@ const CandidateForm = () => {
                         }}
                       />
                     </div>
-                   
+
                   </div>
 
                   {progress === 100 && (
@@ -857,26 +1058,43 @@ const CandidateForm = () => {
 
             </motion.div>
 
-            {errors.resume &&<center> <div className="invalid-feedback d-block" style={{ marginTop: '10px' ,alignContent:'center'}}>{errors.resume}</div></center>}
+            {errors.resume && <center> <div className="invalid-feedback d-block" style={{ marginTop: '10px', alignContent: 'center' }}>{errors.resume}</div></center>}
 
             {/* Submit Button with Bounce */}
+
             <motion.div
               className="submit-preferences mt-5"
               initial={{ scale: 1 }}
               animate={{ scale: 1.1 }}
               transition={{ type: "spring", stiffness: 200, damping: 10 }}
+              style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}
             >
               <motion.button
                 type="submit"
                 className="btn submit-button"
-                whileHover={{ scale: 1.1 }}  // Hover effect
+                whileHover={{ scale: 1.05 }}  // Hover effect
                 whileTap={{ scale: 0.95 }}  // Tap effect
                 transition={{ duration: 0.2 }}
               >
                 SUBMIT PREFERENCES
               </motion.button>
+              <motion.button
+                type=""
+                className="btn run-now-button"
+                whileHover={{ scale: 1.05 }}  // Hover effect
+                whileTap={{ scale: 0.95 }}  // Tap effect
+                transition={{ duration: 0.2 }}
+              >
+                RUN AND SUBMIT
+              </motion.button>
             </motion.div>
           </form>
+
+
+
+
+
+
           {isPopupVisible && (
             <div className="popup">
               <div className="popup-content">
