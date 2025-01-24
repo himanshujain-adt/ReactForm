@@ -145,6 +145,8 @@ const CandidateForm = () => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
+        setIsJobTypeOpen(false);
+        setIsLocationOpen(false);
       }
     };
 
@@ -235,7 +237,11 @@ const CandidateForm = () => {
       newErrors.minimumSalary = 'Please enter a minimum salary.';
     } else if (isNaN(formData.minimumSalary)) {
       newErrors.minimumSalary = 'Please enter a valid number for salary.';
+    } else if (parseFloat(formData.minimumSalary) < 25000) { // Check if salary is less than 25000
+      newErrors.minimumSalary = 'The minimum salary should be at least 25000.';
     }
+   
+    
     const score = formData.minimumScore.trim();
 
     // Check if the score is empty
@@ -476,6 +482,7 @@ const CandidateForm = () => {
         position: "absolute",
         right: "20px",
         top: "60%",
+    
        
         color: "grey",
         cursor: "pointer"
@@ -656,9 +663,9 @@ const CandidateForm = () => {
                 transition={{ duration: 0.6, delay: 0.6 }}
               >
                 <div className="form-group">
-                  <label className="form-label">Minimum Salary</label>
+                  <label className="form-label">Minimum Salary ($)</label>
                   <motion.input
-                    type="number"
+                    type="text"
                     className={`form-control form-input rounded-3 ${errors.minimumSalary ? 'is-invalid' : ''}`}
                     placeholder="e.g 25000"
                     value={formData.minimumSalary}
@@ -706,7 +713,7 @@ const CandidateForm = () => {
                   <label className="form-label">Job Type</label>
                   <div className={`dropdown ${errors.jobType ? 'is-invalid' : ''}`} ref={dropdownRef}>
                     <motion.button
-                      className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${errors.jobType ? 'border-danger' : ''
+                      className={`btn custom-dropdown-button dropdown-toggle w-100  ${errors.jobType ? 'border-danger' : ''
                         }`}
                       type="button"
                       onClick={() => setIsJobTypeOpen(!isJobTypeOpen)}
