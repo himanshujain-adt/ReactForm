@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import Typed from 'typed.js';
 import uploadIcon from "../assets/upload-resume.png";
 import './CandidateForm.css';
+// import { LuMailSearch } from "react-icons/lu";
+import { FaSearch } from "react-icons/fa";
 
 const CandidateForm = () => {
 
@@ -358,7 +360,7 @@ const CandidateForm = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
 
-    // setFormData({...formData,minimumScore:e.target.value})
+   
   };
 
 
@@ -409,7 +411,7 @@ const CandidateForm = () => {
                 </div>
               </motion.div>
               {/* Candidate Email */}
-              <motion.div
+              {/* <motion.div
                 className="col-md-6"
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -418,25 +420,72 @@ const CandidateForm = () => {
               >
 
 
-                <div className="form-group">
-                  <label
-                    className="form-label"
-                  >
-                    Candidate Email
-                  </label>
-                  <input
-                    type="text"
-                    className={`form-control form-input rounded-3 bold-text ${errors.candidateEmail ? 'is-invalid' : ''}`}
-                    placeholder="e.g johndoe@gmail.com"
-                    value={formData.candidateEmail}
-                    onChange={handleCandidateEmailChange}
-                  />
+                <div className="form-group" style={{ display: "flex" }}>
+                  <div>
+                    <label
+                      className="form-label"
+                    >
+                      Candidate Email
+                    </label>
+                   
+                    <input
+                      type="text"
+                      className={`form-control form-input rounded-3 bold-text ${errors.candidateEmail ? 'is-invalid' : ''}`}
+                      placeholder="e.g johndoe@gmail.com"
+                      value={formData.candidateEmail}
+                      onChange={handleCandidateEmailChange}
 
-                  {errors.candidateEmail && <div className="invalid-feedback">{errors.candidateEmail}</div>}
+                    />
 
-
+                    {errors.candidateEmail && <div className="invalid-feedback">{errors.candidateEmail}</div>}
+                  </div>
+                 
+                    <LuMailSearch style={{ float: "bottom", marginLeft: "5px", marginTop: "35px", color: "blue" }} size={35} />
+               
                 </div>
-              </motion.div>
+
+              </motion.div> */}
+              <motion.div
+  className="col-md-6"
+  initial={{ opacity: 0, x: -50 }}
+  animate={{ opacity: 1, x: 0 }}
+  transition={{ duration: 0.6, delay: 0.2 }}
+  style={{}}
+>
+  <div className="form-group" style={{ display: "flex", position: "relative" }}>
+    <div style={{ width: "100%" }}>
+      <label className="form-label">
+        Candidate Email
+      </label>
+
+      <input
+        type="text"
+        className={`form-control form-input rounded-3 bold-text ${errors.candidateEmail ? 'is-invalid' : ''}`}
+        placeholder="e.g johndoe@gmail.com"
+        value={formData.candidateEmail}
+        onChange={handleCandidateEmailChange}
+        style={{ paddingRight: "40px" }}  // Add padding for space for the icon
+      />
+
+      {errors.candidateEmail && <div className="invalid-feedback">{errors.candidateEmail}</div>}
+    </div>
+
+    {/* Icon positioned inside the input field */}
+    <FaSearch  
+      style={{
+        position: "absolute",
+        right: "20px",
+        top: "60%",
+       
+        color: "grey",
+        cursor: "pointer"
+      }} 
+      size={25} 
+      title='search'
+    />
+  </div>
+</motion.div>
+
               {/* Target Job Title */}
               <motion.div
                 className="col-md-6"
@@ -783,126 +832,7 @@ const CandidateForm = () => {
               </motion.div>
             </div>
 
-            {/* <div className="inclusions mt-5">
-              <h3 className="section-title">Inclusions:</h3>
-              <div className="row g-4 mt-2">
-                {[
-                  {
-                    label: 'Desired Companies',
-                    placeholder: 'e.g Microsoft',
-                    name: 'desiredCompanies',
-                    pattern: "^[a-zA-Z\\s]+$"
-                  },
-                  {
-                    label: 'Desired Industries',
-                    placeholder: 'e.g IT ',
-                    name: 'desiredIndustries',
-                    pattern: "^[a-zA-Z\\s]+$"
-                  },
-                  {
-                    label: 'Desired Company Size',
-                    placeholder: 'e.g Multinational',
-                    name: 'desiredCompanySize',
-                    pattern: "^[a-zA-Z\\s]+$"
-                  },
-                  {
-                    label: 'Desired Location',
-                    placeholder: 'e.g London',
-                    name: 'desiredLocation',
-                    pattern: "^[a-zA-Z\\s]+$"
-                  }
-                ].map(({ label, placeholder, name, pattern }) => (
-                  <motion.div
-                    key={label}
-                    className="col-md-6"
-                    initial={{ opacity: 0, x: -50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, delay: 1 }}
-                  >
-                    <div className="form-group">
-                      <label className="form-label">{label}</label>
-                      <motion.input
-                        type="text"
-                        className={`form-control form-input rounded-3 ${errors[name] ? 'is-invalid' : ''}`}
-                        placeholder={placeholder}
-                        pattern={pattern}
-                        value={formData[name]}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value === '' || new RegExp(pattern).test(value)) {
-                            setFormData({ ...formData, [name]: value });
-                            // Clear error when user starts typing
-                            if (errors[name]) {
-                              setErrors(prev => ({
-                                ...prev,
-                                [name]: ''
-                              }));
-                            }
-                          }
-                        }}
-                      />
-                      {errors[name] && (
-                        <div className="invalid-feedback d-block">
-                          {errors[name]}
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div> */}
-
-
-            {/* <div className="exclusions mt-5">
-              <h3 className="section-title">Exclusions:</h3>
-              <div className="row g-4 mt-2">
-                {[
-                  { label: 'Undesired Companies', placeholder: 'e.g Deloitte Consulting ', name: 'undesiredCompanies' },
-                  { label: 'Undesired Industries', placeholder: 'e.g Finance', name: 'undesiredIndustries' },
-                  { label: 'Undesired Company Size', placeholder: 'e.g Startup', name: 'undesiredCompanySize' },
-                  { label: 'Undesired Location', placeholder: 'e.g New York', name: 'undesiredLocation' }
-                ].map(({ label, placeholder, name }) => (
-                  <motion.div
-                    key={label}
-                    className="col-md-6"
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.8, delay: 1.2 }}
-                  >
-                    <div className="form-group">
-                      <label className="form-label">{label}</label>
-                      <motion.input
-                        type="text"
-                        className={`form-control form-input rounded-3 ${errors[name] ? 'is-invalid' : ''}`}
-                        placeholder={placeholder}
-                        value={formData[name]}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setFormData({ ...formData, [name]: value });
-                          if (errors[name]) {
-                            setErrors({ ...errors, [name]: '' });
-                          }
-                        }}
-                        onBlur={(e) => {
-                          const value = e.target.value.trim();
-                          if (!value) {
-                            setErrors((prevErrors) => ({
-                              ...prevErrors,
-                              [name]: `Please enter ${label.toLowerCase()}`,
-                            }));
-                          }
-                        }}
-                        pattern="^[a-zA-Z\s]+$"  // Added pattern here to allow only alphabets and spaces
-                      />
-                      {errors[name] && (
-                        <div className="invalid-feedback d-block">{errors[name]}</div>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-
-            </div> */}
+        
             <div className="inclusions mt-5">
               <h3 className="section-title">Inclusions:</h3>
               <div className="row g-4 mt-2">
@@ -1124,23 +1054,40 @@ const CandidateForm = () => {
             {errors.resume && <center> <div className="invalid-feedback d-block" style={{ marginTop: '10px', alignContent: 'center' }}>{errors.resume}</div></center>}
 
             {/* Submit Button with Bounce */}
+
             <motion.div
               className="submit-preferences mt-5"
               initial={{ scale: 1 }}
               animate={{ scale: 1.1 }}
               transition={{ type: "spring", stiffness: 200, damping: 10 }}
+              style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}
             >
               <motion.button
                 type="submit"
                 className="btn submit-button"
-                whileHover={{ scale: 1.1 }}  // Hover effect
+                whileHover={{ scale: 1.05 }}  // Hover effect
                 whileTap={{ scale: 0.95 }}  // Tap effect
                 transition={{ duration: 0.2 }}
               >
                 SUBMIT PREFERENCES
               </motion.button>
+              <motion.button
+                type=""
+                className="btn run-now-button"
+                whileHover={{ scale: 1.05 }}  // Hover effect
+                whileTap={{ scale: 0.95 }}  // Tap effect
+                transition={{ duration: 0.2 }}
+              >
+                RUN AND SUBMIT
+              </motion.button>
             </motion.div>
           </form>
+
+
+
+
+
+
           {isPopupVisible && (
             <div className="popup">
               <div className="popup-content">
