@@ -10,7 +10,6 @@ const CandidateForm = () => {
 
   const [selectedDays, setSelectedDays] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [suggestedValues, setSuggestedValues] = useState([]);
   const [formData, setFormData] = useState({
     candidateId: 'C12345',
     jobTitles: [],
@@ -74,16 +73,17 @@ const CandidateForm = () => {
 
   });
   const dropdownRef = useRef(null);
-  const locationDropdownRef = useRef(null);
-  const jobTypedropdownRef = useRef(null);
+   const locationDropdownRef = useRef(null);
+    const jobTypedropdownRef = useRef(null);
   const typedRef = useRef(null);
   const days = [
     'Monday', 'Tuesday', 'Wednesday', 'Thursday',
     'Friday', 'Saturday', 'Sunday'
   ];
+  const jobTypes = ['Full Time', 'Part Time', 'Contract', 'Internship'];
   const [selectedJobTypes, setSelectedJobTypes] = useState([]);
-  const [isJobTypeOpen, setIsJobTypeOpen] = useState(false);
   const [selectedLocations, setSelectedLocations] = useState([]);
+  const [isJobTypeOpen, setIsJobTypeOpen] = useState(false);
   const [isLocationOpen, setIsLocationOpen] = useState(false);
 
   const [fileName, setFileName] = useState('');
@@ -91,6 +91,8 @@ const CandidateForm = () => {
   const [uploading, setUploading] = useState(false);  // To track if the file is being uploaded
   const [progress, setProgress] = useState(0);
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
+
+
 
 
   const handleFileChange = (e) => {
@@ -125,15 +127,6 @@ const CandidateForm = () => {
     setProgress(0);
   };
 
-  const locations = ['Work From Home (WFH)', 'Work From Office (WFO)', 'Hybrid'];
-  const jobTypes = ['Full Time', 'Part Time', 'Contract', 'Internship'];
-  const handleLocationToggle = (location) => {
-    setSelectedLocations((prev) =>
-      prev.includes(location)
-        ? prev.filter((loc) => loc !== location)
-        : [...prev, location]
-    );
-  };
 
 
 
@@ -141,21 +134,9 @@ const CandidateForm = () => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
+       
 
       }
-      if (
-        locationDropdownRef.current &&
-        !locationDropdownRef.current.contains(event.target)
-      ) {
-        setIsLocationOpen(false);
-      }
-      if (
-        jobTypedropdownRef.current &&
-        !jobTypedropdownRef.current.contains(event.target)
-      ) {
-        setIsJobTypeOpen(false);
-      }
-
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -164,6 +145,7 @@ const CandidateForm = () => {
     };
   }, []);
 
+  
   const handleDayToggle = (day) => {
     setSelectedDays(prev =>
       prev.includes(day)
@@ -273,9 +255,7 @@ const CandidateForm = () => {
     if (selectedDays.length === 0) {
       newErrors.reportSchedule = 'Please select at least one day for report schedule';
     }
-    if (selectedJobTypes.length === 0) {
-      newErrors.jobType = 'Please select at least one job type';
-    }
+
 
     // Job Location validation
     if (selectedLocations.length === 0) {
@@ -361,6 +341,73 @@ const CandidateForm = () => {
     const value = e.target.value;
     setFormData({ ...formData, candidateEmail: value });
   };
+
+  const handleSearchClick = async () => {
+    const userEmail = formData.candidateEmail;
+    console.log("User Email:", userEmail);
+
+    if (!userEmail) {
+      setErrors({ candidateEmail: "Please enter an email" });
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://3.110.181.207:8087/getUserVerification?userEmail=${encodeURIComponent(userEmail)}`);
+      // const response = await fetch(``);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch data");
+      }
+
+      const data = await response.json();
+      console.log("API Response:", data); // Log the response
+
+      setFormData((prevData) => ({
+        ...prevData,
+
+
+
+
+        candidateName: data.prefs.candidateName,
+        candidateEmail: data.prefs.candidateEmail,
+        jobTitles: data.prefs.jobTitles,
+        minimumSalary: "$" + data.prefs.lowestSalary,
+        undesiredCompanies: data.prefs.undesiredCompanies,
+        desiredLocations: data.prefs.desiredLocations,
+
+        desiredCompanies: data.prefs.desiredComapanies.join(", "),  // If it's an array, join it as a string
+        desiredIndustries: data.prefs.desiredIndustry.join(", "),  // Same for array fields
+        desiredCompanySize: data.prefs.desiredCompanySize,
+        desiredLocation: data.prefs.desiredLocations.join(", "),
+
+
+
+
+        // jobTitles: data.prefs.jobTitles,
+        // desiredLocations: data.prefs.desiredLocations,
+        // fullRemote: data.prefs.fullRemote,
+        // lowestSalary: data.prefs.lowestSalary,
+        // undesiredRoles: data.prefs.undesiredRoles,
+        // undesiredCompanies: data.prefs.undesiredCompanies,
+        // candidateResume: data.prefs.candidateResume,
+        // maxJobAgeDays: data.prefs.maxJobAgeDays,
+        // desiredComapanies: data.prefs.desiredComapanies,
+        // desiredIndustry: data.prefs.desiredIndustry,
+        // undesiredIndustry: data.prefs.undesiredIndustry,
+        // desiredCompanySize: data.prefs.desiredCompanySize,
+        // undesiredCompanySize: data.prefs.undesiredCompanySize,
+      }));
+      console.log("Candidate Name====>>>>>>>>>>>>>>:", data.prefs.candidateName);
+      console.log("jobTitles====>>>>>>>>>>>>>>:", data.prefs.jobTitles);
+      console.log("CandidateEmail====>>>>>>>>>>>>>>:", data.prefs.candidateId);
+      console.log("UndesiredCompanies====>>>>>>>>>>>>>>:", data.prefs.undesiredCompanies);
+
+      // Optionally, you can handle the API response data here.
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
   const salarySuggestions = [
     "$25000",
     "$50000",
@@ -407,6 +454,31 @@ const CandidateForm = () => {
 
   };
 
+  const handleJobTypeChange = (jobType) => {
+    // const updatedTypes = selectedJobTypes.includes(jobType)
+    //   ? selectedJobTypes.filter(type => type !== jobType)
+    //   : [...selectedJobTypes, jobType];
+    
+    // setSelectedJobTypes(updatedTypes);
+    // // Clear the error when user selects a job type
+    // if (errors.jobType) {
+    //   setErrors(prev => ({
+    //     ...prev,
+    //     jobType: ''
+    //   }));
+    // }
+    // setFormData(prev => ({
+    //   ...prev,
+    //   jobType: updatedTypes
+    // }));
+    setSelectedJobTypes(prev =>
+      prev.includes(jobType)
+        ? prev.filter(d => d !== jobType)
+        : [...prev, jobType]
+    );
+  };
+
+
 
   return (
 
@@ -420,7 +492,7 @@ const CandidateForm = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="candidate-details-header mb-3">
-            <h2 className="header-title">   <span> Candidate Details </span></h2>
+            <h2 className="header-title">   <span > Candidate Details </span></h2>
           </div>
 
           <form onSubmit={handleFormSubmit}>
@@ -455,40 +527,7 @@ const CandidateForm = () => {
                 </div>
               </motion.div>
               {/* Candidate Email */}
-              {/* <motion.div
-                className="col-md-6"
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                style={{}}
-              >
 
-
-                <div className="form-group" style={{ display: "flex" }}>
-                  <div>
-                    <label
-                      className="form-label"
-                    >
-                      Candidate Email
-                    </label>
-                   
-                    <input
-                      type="text"
-                      className={`form-control form-input rounded-3 bold-text ${errors.candidateEmail ? 'is-invalid' : ''}`}
-                      placeholder="e.g johndoe@gmail.com"
-                      value={formData.candidateEmail}
-                      onChange={handleCandidateEmailChange}
-
-                    />
-
-                    {errors.candidateEmail && <div className="invalid-feedback">{errors.candidateEmail}</div>}
-                  </div>
-                 
-                    <LuMailSearch style={{ float: "bottom", marginLeft: "5px", marginTop: "35px", color: "blue" }} size={35} />
-               
-                </div>
-
-              </motion.div> */}
               <motion.div
                 className="col-md-6"
                 initial={{ opacity: 0, x: -50 }}
@@ -527,6 +566,7 @@ const CandidateForm = () => {
                     }}
                     size={25}
                     title='search'
+                    onClick={handleSearchClick}
                   />
                 </div>
               </motion.div>
@@ -551,8 +591,9 @@ const CandidateForm = () => {
                     type="text"
                     className={`form-control form-input rounded-3 bold-text ${errors.jobTitles ? 'is-invalid' : ''}`}
                     placeholder="e.g Java Developer"
-                    value={formData.jobTitles}
+                    value={Array.isArray(formData.jobTitles) ? formData.jobTitles.join(', ') : formData.jobTitles}
                     onChange={handleJobTitleChange}
+                  // disabled
                   />
 
                   {errors.jobTitles && <div className="invalid-feedback">{errors.jobTitles}</div>}
@@ -571,20 +612,17 @@ const CandidateForm = () => {
               >
                 <div className="form-group">
                   <label className="form-label">Job Location</label>
-                  <div
-                    className={`dropdown ${errors.jobLocation ? "is-invalid" : ""}`}
-                    ref={locationDropdownRef}
-                  >
+                  <div className={`dropdown ${errors.jobLocation ? 'is-invalid' : ''}`} ref={dropdownRef}>
                     <motion.button
-                      className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${errors.jobLocation ? "border-danger" : ""
+                      className={`btn custom-dropdown-button dropdown-toggle w-100 ${errors.jobLocation ? 'border-danger' : ''
                         }`}
                       type="button"
-                      onClick={() => setIsLocationOpen((prev) => !prev)}
+                      onClick={() => setIsLocationOpen(!isLocationOpen)}
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
                     >
                       {selectedLocations.length === 0
-                        ? "Select Job Location"
+                        ? 'Select Job Location'
                         : selectedLocations.length === 1
                           ? selectedLocations[0]
                           : `${selectedLocations.length} locations selected`}
@@ -595,24 +633,40 @@ const CandidateForm = () => {
                       </div>
                     )}
                     <motion.div
-                      className={`dropdown-menu custom-dropdown-menu ${isLocationOpen ? "show" : ""
-                        }`}
+                      className={`dropdown-menu custom-dropdown-menu ${isLocationOpen ? 'show' : ''}`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: isLocationOpen ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
                     >
-                      {locations.map((location) => (
+                      {['Work From Home (WFH)', 'Work From Office (WFO)', 'Hybrid'].map((location) => (
                         <div key={location} className="form-check mb-2">
                           <input
                             className="form-check-input border border-dark"
                             type="checkbox"
-                            id={`${location.toLowerCase().replace(/[\s()]+/g, "-")}Checkbox`}
+                            id={`${location.toLowerCase().replace(/[\s()]+/g, '-')}Checkbox`}
                             checked={selectedLocations.includes(location)}
-                            onChange={() => handleLocationToggle(location)}
+                            onChange={() => {
+                              setSelectedLocations(prev =>
+                                prev.includes(location)
+                                  ? prev.filter(loc => loc !== location)
+                                  : [...prev, location]
+                              );
+                              // Clear the error when user selects a location
+                              if (errors.jobLocation) {
+                                setErrors(prev => ({
+                                  ...prev,
+                                  jobLocation: ''
+                                }));
+                              }
+                              setFormData(prev => ({
+                                ...prev,
+                                desiredLocations: selectedLocations
+                              }));
+                            }}
                           />
                           <label
                             className="form-check-label ms-2"
-                            htmlFor={`${location.toLowerCase().replace(/[\s()]+/g, "-")}Checkbox`}
+                            htmlFor={`${location.toLowerCase().replace(/[\s()]+/g, '-')}Checkbox`}
                           >
                             {location}
                           </label>
@@ -622,6 +676,8 @@ const CandidateForm = () => {
                   </div>
                 </div>
               </motion.div>
+
+
 
               {/* Distribution  List*/}
 
@@ -741,7 +797,8 @@ const CandidateForm = () => {
               </motion.div>
 
 
-              {/* Job Type */}
+          
+
               <motion.div
                 className="col-md-6"
                 initial={{ opacity: 0, x: -50 }}
@@ -750,12 +807,12 @@ const CandidateForm = () => {
               >
                 <div className="form-group">
                   <label className="form-label">Job Type</label>
-                  <div className={`dropdown ${errors.jobType ? 'is-invalid' : ''}`} ref={jobTypedropdownRef}>
+                  <div className={`dropdown ${errors.jobType ? 'is-invalid' : ''}`} ref={dropdownRef}>
                     <motion.button
-                      className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${errors.jobType ? 'border-danger' : ''
+                      className={`btn custom-dropdown-button dropdown-toggle w-100 ${errors.jobType ? 'border-danger' : ''
                         }`}
                       type="button"
-                      onClick={() => setIsJobTypeOpen((prev) => !prev)}
+                      onClick={() => setIsJobTypeOpen(!isJobTypeOpen)}
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
                     >
@@ -776,7 +833,6 @@ const CandidateForm = () => {
                       animate={{ opacity: isJobTypeOpen ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
                     >
-                      {/* {['Full Time', 'Part Time', 'Contract', 'Internship'] */}
                       {jobTypes.map((jobType) => (
                         <div key={jobType} className="form-check mb-2">
                           <input
@@ -784,24 +840,7 @@ const CandidateForm = () => {
                             type="checkbox"
                             id={`${jobType.toLowerCase().replace(/\s+/g, '-')}Checkbox`}
                             checked={selectedJobTypes.includes(jobType)}
-                            onChange={() => {
-                              setSelectedJobTypes(prev =>
-                                prev.includes(jobType)
-                                  ? prev.filter(type => type !== jobType)
-                                  : [...prev, jobType]
-                              );
-                              // Clear the error when user selects a job type
-                              if (errors.jobType) {
-                                setErrors(prev => ({
-                                  ...prev,
-                                  jobType: ''
-                                }));
-                              }
-                              setFormData(prev => ({
-                                ...prev,
-                                jobType: selectedJobTypes
-                              }));
-                            }}
+                            onChange={() => handleJobTypeChange(jobType)}
                           />
                           <label
                             className="form-check-label ms-2"
@@ -815,6 +854,7 @@ const CandidateForm = () => {
                   </div>
                 </div>
               </motion.div>
+              
 
               {/* Report Schedule */}
               <motion.div
@@ -898,7 +938,7 @@ const CandidateForm = () => {
                   },
                   {
                     label: 'Desired Company Size',
-                    placeholder: 'e.g 0-50',
+                    placeholder: 'e.g Multinational',
                     name: 'desiredCompanySize',
                     pattern: "^[a-zA-Z0-9\\s]+$"
                   },
@@ -949,101 +989,72 @@ const CandidateForm = () => {
             </div>
 
             <div className="exclusions mt-5">
-  <h3 className="section-title">Exclusions:</h3>
-  <div className="row g-4 mt-2">
-    {[
-      {
-        label: 'Undesired Companies',
-        placeholder: 'e.g Deloitte Consulting ',
-        name: 'undesiredCompanies',
-        pattern: "^[a-zA-Z0-9\\s]+$"
-      },
-      {
-        label: 'Undesired Industries',
-        placeholder: 'e.g Finance',
-        name: 'undesiredIndustries',
-        pattern: "^[a-zA-Z0-9\\s]+$"
-      },
-      {
-        label: 'Undesired Company Size',
-        placeholder: 'e.g 0-50',
-        name: 'undesiredCompanySize',
-        pattern: "^[a-zA-Z0-9\\s]+$",
-        suggestions: ['0-50', '51-200', '201-500', '500+'] // Suggestions for this field
-      },
-      {
-        label: 'Undesired Location',
-        placeholder: 'e.g New York',
-        name: 'undesiredLocation',
-        pattern: "^[a-zA-Z0-9\\s]+$"
-      }
-    ].map(({ label, placeholder, name, pattern, suggestions }) => (
-      <motion.div
-        key={label}
-        className="col-md-6"
-        initial={{ opacity: 0, x: 50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8, delay: 1.2 }}
-      >
-        <div className="form-group">
-          <label className="form-label">{label}</label>
-          <motion.input
-            type="text"
-            className={`form-control form-input rounded-3 ${errors[name] ? 'is-invalid' : ''}`}
-            placeholder={placeholder}
-            pattern={pattern}
-            value={formData[name]}
-            onFocus={() => {
-              // Only display suggestions for the 'Undesired Company Size' field
-              if (name === 'undesiredCompanySize' && suggestions) {
-                setSuggestedValues(suggestions);
-              } else {
-                setSuggestedValues([]); // Clear suggestions for other fields
-              }
-            }}
-            onBlur={() => setSuggestedValues([])} // Clear suggestions on blur
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === '' || new RegExp(pattern).test(value)) {
-                setFormData({ ...formData, [name]: value });
-                if (errors[name]) {
-                  setErrors(prev => ({
-                    ...prev,
-                    [name]: ''
-                  }));
-                }
-              }
-            }}
-          />
-          {errors[name] && (
-            <div className="invalid-feedback d-block">
-              {errors[name]}
+              <h3 className="section-title">Exclusions:</h3>
+              <div className="row g-4 mt-2">
+                {[
+                  {
+                    label: 'Undesired Companies',
+                    placeholder: 'e.g Deloitte Consulting ',
+                    name: 'undesiredCompanies',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Undesired Industries',
+                    placeholder: 'e.g Finance',
+                    name: 'undesiredIndustries',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Undesired Company Size',
+                    placeholder: 'e.g Startup',
+                    name: 'undesiredCompanySize',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Undesired Location',
+                    placeholder: 'e.g New York',
+                    name: 'undesiredLocation',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  }
+                ].map(({ label, placeholder, name, pattern }) => (
+                  <motion.div
+                    key={label}
+                    className="col-md-6"
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, delay: 1.2 }}
+                  >
+                    <div className="form-group">
+                      <label className="form-label">{label}</label>
+                      <motion.input
+                        type="text"
+                        className={`form-control form-input rounded-3 ${errors[name] ? 'is-invalid' : ''}`}
+                        placeholder={placeholder}
+                        pattern={pattern}
+                        value={formData[name]}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || new RegExp(pattern).test(value)) {
+                            setFormData({ ...formData, [name]: value });
+                            if (errors[name]) {
+                              setErrors(prev => ({
+                                ...prev,
+                                [name]: ''
+                              }));
+                            }
+                          }
+                        }}
+                      />
+                      {errors[name] && (
+                        <div className="invalid-feedback d-block">
+                          {errors[name]}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
-          )}
-
-          {/* Render suggestions */}
-          {name === 'undesiredCompanySize' && suggestedValues.length > 0 && (
-            <div className="suggestions-list">
-              {suggestedValues.map((suggestion, index) => (
-                <div
-                  key={index}
-                  className="suggestion-item"
-                  onClick={() => {
-                    setFormData({ ...formData, [name]: suggestion });
-                    setSuggestedValues([]); // Clear suggestions after selecting
-                  }}
-                >
-                  {suggestion}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </motion.div>
-    ))}
-  </div>
-</div>
-
 
 
 
@@ -1158,11 +1169,6 @@ const CandidateForm = () => {
               </motion.button>
             </motion.div>
           </form>
-
-
-
-
-
 
           {isPopupVisible && (
             <div className="popup">
