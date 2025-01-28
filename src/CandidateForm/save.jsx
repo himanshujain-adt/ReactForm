@@ -1,15 +1,15 @@
 import { motion } from 'framer-motion';
 import React, { useEffect, useRef, useState } from 'react';
-import Typed from 'typed.js';
 import uploadIcon from "../assets/upload-resume.png";
 import './CandidateForm.css';
-// import { LuMailSearch } from "react-icons/lu";
 import { FaSearch } from "react-icons/fa";
+import axios from 'axios';
 
 const CandidateForm = () => {
 
   const [selectedDays, setSelectedDays] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [suggestedValues, setSuggestedValues] = useState([]);
   const [formData, setFormData] = useState({
     candidateId: 'C12345',
     jobTitles: [],
@@ -40,17 +40,11 @@ const CandidateForm = () => {
     physicalLocation: '',
     candidateName: '',
     candidateEmail: ''
-
-
   });
   const [isPopupVisible, setPopupVisible] = useState(false);
 
-
-  const handleOkClick = () => {
-    setPopupVisible(false);
-    window.location.reload();
-    // Reset the form here if needed
-  };
+  const locations = ['Work From Home (WFH)', 'Work From Office (WFO)', 'Hybrid'];
+  const jobTypes = ['Full Time', 'Part Time', 'Contract', 'Internship'];
 
   const [errors, setErrors] = useState({
     jobTitles: '',
@@ -89,6 +83,15 @@ const CandidateForm = () => {
   const [file, setFile] = useState(null);  // To store the file object
   const [uploading, setUploading] = useState(false);  // To track if the file is being uploaded
   const [progress, setProgress] = useState(0);
+  const [filteredSuggestions, setFilteredSuggestions] = useState([]);
+
+
+  const handleOkClick = () => {
+    setPopupVisible(false);
+    window.location.reload();
+    // Reset the form here if needed
+  };
+
 
 
   const handleFileChange = (e) => {
@@ -124,25 +127,6 @@ const CandidateForm = () => {
   };
 
 
-  useEffect(() => {
-    const typed = new Typed(typedRef.current, {
-      strings: ['Candidate Details'],
-      typeSpeed: 50,
-      backSpeed: 50,
-      backDelay: 2000,
-      startDelay: 500,
-      loop: true,
-      showCursor: true,
-      cursorChar: '|'
-    });
-
-    return () => {
-      typed.destroy();
-    };
-  }, []);
-
-  const locations = ['Work From Home (WFH)', 'Work From Office (WFO)', 'Hybrid'];
-  const jobTypes= ['Full Time', 'Part Time', 'Contract', 'Internship'];
   const handleLocationToggle = (location) => {
     setSelectedLocations((prev) =>
       prev.includes(location)
@@ -165,10 +149,10 @@ const CandidateForm = () => {
       ) {
         setIsLocationOpen(false);
       }
-      if(
+      if (
         jobTypedropdownRef.current &&
         !jobTypedropdownRef.current.contains(event.target)
-      ){
+      ) {
         setIsJobTypeOpen(false);
       }
 
@@ -213,8 +197,6 @@ const CandidateForm = () => {
       physicalLocation: '',
       candidateName: '',
       candidateEmail: ''
-
-
 
     };
 
@@ -377,9 +359,43 @@ const CandidateForm = () => {
     const value = e.target.value;
     setFormData({ ...formData, candidateEmail: value });
   };
+  const salarySuggestions = [
+    "$25000",
+    "$50000",
+    "$75000",
+    "$100000",
+    "$150000",
+    "$200000"
+  ];
+  const formatSalary = (salary) => {
+    // Format salary value with commas and add the dollar sign back
+    return salary.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+  };
 
   const handleSalaryChange = (e) => {
-    setFormData({ ...formData, minimumSalary: e.target.value });
+    const value = e.target.value;
+
+    // Remove any non-numeric characters (except for periods)
+    const formattedValue = value.replace(/[^0-9.]/g, '');
+
+
+    // Update form data
+    setFormData((prevData) => ({ ...prevData, minimumSalary: formattedValue }));
+
+    // Filter suggestions based on user input
+    if (formattedValue) {
+      const filtered = salarySuggestions.filter(suggestion =>
+        suggestion.replace(/[^0-9]/g, '').includes(formattedValue)
+      );
+      setFilteredSuggestions(filtered);
+    } else {
+      setFilteredSuggestions([]);
+    }
+  };
+  const handleSuggestionClick = (suggestion) => {
+    // Set the selected suggestion to the input field
+    setFormData((prevData) => ({ ...prevData, minimumSalary: suggestion }));
+    setFilteredSuggestions([]); // Hide suggestions after selection
   };
 
   const handleInputChange = (e) => {
@@ -388,6 +404,87 @@ const CandidateForm = () => {
 
 
   };
+
+
+
+
+// Add this function inside your CandidateForm component, before the return statement
+// const handleRunAndSubmit = async (event) => {
+//   event.preventDefault();
+  
+//   // if (!validate()) {
+//   //   return;
+//   // }
+
+//   // Format the data according to API requirements
+//   const payload = {
+//     prefs: {
+//       candidateId: formData.candidateEmail,
+//       candidateName: formData.candidateName,
+//       jobTitles: [formData.jobTitles],
+//       jobLocations: selectedLocations.map(loc => {
+//         switch (loc) {
+//           case "Work From Home (WFH)": return "WFH";
+//           case "Work From Office (WFO)": return "WFO";
+//           case "Hybrid": return "HYBRID";
+//           default: return loc.toUpperCase();
+//         }
+//       }),
+//       jobTypes: selectedJobTypes.map(type => {
+//         switch (type) {
+//           case "Full Time": return "FULL";
+//           case "Part Time": return "PART TIME";
+//           case "Contract": return "CONTRACT";
+//           case "Internship": return "INTERNSHIP";
+//           default: return type.toUpperCase();
+//         }
+//       }),
+//       desiredLocations: formData.desiredLocation ? [formData.desiredLocation] : [],
+//       physicalLocations: formData.physicalLocation ? [formData.physicalLocation.toUpperCase()] : [],
+//       fullRemote: selectedLocations.includes("Work From Home (WFH)"),
+//       lowestSalary: formData.minimumSalary,
+//       undesiredCompanies: formData.undesiredCompanies ? [formData.undesiredCompanies] : [],
+//       undesiredRoles: formData.undesiredRoles ? [formData.undesiredRoles] : [], // Added field
+//       candidateResume: fileName || "",
+//       candidateResumePath: file ? URL.createObjectURL(file) : "",
+//       maxJobAgeDays: 10,
+//       runId: "",
+//       splitByCountry: true,
+//       desiredComapanies: formData.desiredCompanies ? [formData.desiredCompanies] : [],
+//       desiredIndustry: formData.desiredIndustries ? [formData.desiredIndustries.toUpperCase()] : [],
+//       undesiredIndustry: formData.undesiredIndustries ? [formData.undesiredIndustries.toUpperCase()] : [],
+//       desiredCompanySize: formData.desiredCompanySize,
+//       undesiredCompanySize: formData.undesiredCompanySize,
+//       reportSchedules: selectedDays.map(day => day.toUpperCase())
+//     }
+//     ,
+//     dayOfWeek: selectedDays[0]?.toUpperCase() || "MONDAY",
+//     distributionList: [formData.distributionList]
+//   };
+// console.log('payload',payload)
+//   try {
+//     const response = await axios.post(
+//       `http://192.168.1.33:8087/schedule?initialize=true&emails=${encodeURIComponent(formData.distributionList)}`,
+//       payload,
+//       {
+//         headers: {
+//           'Content-Type': 'application/json'
+//         }
+//       }
+//     );
+
+//     if (response.status === 200) {
+//       setPopupVisible(true);
+//       console.log('API Response:', response.data);
+//     }
+//   } catch (error) {
+//     console.error('Error submitting form:', error);
+//     // Add better error handling here
+//     alert('Error submitting form. Please try again.');
+//   }
+// };
+
+
 
 
   return (
@@ -402,7 +499,7 @@ const CandidateForm = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="candidate-details-header mb-3">
-            <h2 className="header-title">   <span ref={typedRef}> Candidate Details </span></h2>
+            <h2 className="header-title">   <span> Candidate Details </span></h2>
           </div>
 
           <form onSubmit={handleFormSubmit}>
@@ -436,41 +533,7 @@ const CandidateForm = () => {
 
                 </div>
               </motion.div>
-              {/* Candidate Email */}
-              {/* <motion.div
-                className="col-md-6"
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                style={{}}
-              >
 
-
-                <div className="form-group" style={{ display: "flex" }}>
-                  <div>
-                    <label
-                      className="form-label"
-                    >
-                      Candidate Email
-                    </label>
-                   
-                    <input
-                      type="text"
-                      className={`form-control form-input rounded-3 bold-text ${errors.candidateEmail ? 'is-invalid' : ''}`}
-                      placeholder="e.g johndoe@gmail.com"
-                      value={formData.candidateEmail}
-                      onChange={handleCandidateEmailChange}
-
-                    />
-
-                    {errors.candidateEmail && <div className="invalid-feedback">{errors.candidateEmail}</div>}
-                  </div>
-                 
-                    <LuMailSearch style={{ float: "bottom", marginLeft: "5px", marginTop: "35px", color: "blue" }} size={35} />
-               
-                </div>
-
-              </motion.div> */}
               <motion.div
                 className="col-md-6"
                 initial={{ opacity: 0, x: -50 }}
@@ -670,17 +733,31 @@ const CandidateForm = () => {
                 transition={{ duration: 0.6, delay: 0.6 }}
               >
                 <div className="form-group">
-                  <label className="form-label">Minimum Salary</label>
+                  <label className="form-label">Minimum Salary ($)</label>
                   <motion.input
-                    type="number"
+                    type="text"
                     className={`form-control form-input rounded-3 ${errors.minimumSalary ? 'is-invalid' : ''}`}
-                    placeholder="e.g 25000"
+                    placeholder="e.g $ 25000"
                     value={formData.minimumSalary}
                     onChange={handleSalaryChange}
                     whileHover={{ scale: 1.05 }} // Hover scale
                     transition={{ duration: 0.2 }}
                   />
                   {errors.minimumSalary && <div className="invalid-feedback">{errors.minimumSalary}</div>}
+                  {filteredSuggestions.length > 0 && (
+                    <ul className="suggestions-list">
+                      {filteredSuggestions.map((suggestion, index) => (
+                        <li
+                          key={index}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          className="suggestion-item"
+                        >
+                          {formatSalary(suggestion?.replace('$', '$'))} {/* Add commas back for formatting */}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
                 </div>
               </motion.div>
 
@@ -745,7 +822,7 @@ const CandidateForm = () => {
                       transition={{ duration: 0.3 }}
                     >
                       {/* {['Full Time', 'Part Time', 'Contract', 'Internship'] */}
-                     { jobTypes.map((jobType) => (
+                      {jobTypes.map((jobType) => (
                         <div key={jobType} className="form-check mb-2">
                           <input
                             className="form-check-input border border-dark"
@@ -866,7 +943,7 @@ const CandidateForm = () => {
                   },
                   {
                     label: 'Desired Company Size',
-                    placeholder: 'e.g Multinational',
+                    placeholder: 'e.g 0-50',
                     name: 'desiredCompanySize',
                     pattern: "^[a-zA-Z0-9\\s]+$"
                   },
@@ -934,9 +1011,10 @@ const CandidateForm = () => {
                   },
                   {
                     label: 'Undesired Company Size',
-                    placeholder: 'e.g Startup',
+                    placeholder: 'e.g 0-50',
                     name: 'undesiredCompanySize',
-                    pattern: "^[a-zA-Z0-9\\s]+$"
+                    pattern: "^[a-zA-Z0-9\\s]+$",
+                    suggestions: ['0-50', '51-200', '201-500', '500+'] // Suggestions for this field
                   },
                   {
                     label: 'Undesired Location',
@@ -944,7 +1022,7 @@ const CandidateForm = () => {
                     name: 'undesiredLocation',
                     pattern: "^[a-zA-Z0-9\\s]+$"
                   }
-                ].map(({ label, placeholder, name, pattern }) => (
+                ].map(({ label, placeholder, name, pattern, suggestions }) => (
                   <motion.div
                     key={label}
                     className="col-md-6"
@@ -960,6 +1038,15 @@ const CandidateForm = () => {
                         placeholder={placeholder}
                         pattern={pattern}
                         value={formData[name]}
+                        onFocus={() => {
+                          // Only display suggestions for the 'Undesired Company Size' field
+                          if (name === 'undesiredCompanySize' && suggestions) {
+                            setSuggestedValues(suggestions);
+                          } else {
+                            setSuggestedValues([]); // Clear suggestions for other fields
+                          }
+                        }}
+                        onBlur={() => setSuggestedValues([])} // Clear suggestions on blur
                         onChange={(e) => {
                           const value = e.target.value;
                           if (value === '' || new RegExp(pattern).test(value)) {
@@ -978,11 +1065,30 @@ const CandidateForm = () => {
                           {errors[name]}
                         </div>
                       )}
+
+                      {/* Render suggestions */}
+                      {name === 'undesiredCompanySize' && suggestedValues.length > 0 && (
+                        <div className="suggestions-list">
+                          {suggestedValues.map((suggestion, index) => (
+                            <div
+                              key={index}
+                              className="suggestion-item"
+                              onClick={() => {
+                                setFormData({ ...formData, [name]: suggestion });
+                                setSuggestedValues([]); // Clear suggestions after selecting
+                              }}
+                            >
+                              {suggestion}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 ))}
               </div>
             </div>
+
 
 
 
@@ -1086,15 +1192,17 @@ const CandidateForm = () => {
               >
                 SUBMIT PREFERENCES
               </motion.button>
-              <motion.button
-                type=""
-                className="btn run-now-button"
-                whileHover={{ scale: 1.05 }}  // Hover effect
-                whileTap={{ scale: 0.95 }}  // Tap effect
-                transition={{ duration: 0.2 }}
-              >
-                RUN AND SUBMIT
-              </motion.button>
+ 
+<motion.button
+  type="button"
+  className="btn run-now-button"
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  transition={{ duration: 0.2 }}
+  onClick={handleRunAndSubmit}
+>
+  RUN AND SUBMIT
+</motion.button>
             </motion.div>
           </form>
 
