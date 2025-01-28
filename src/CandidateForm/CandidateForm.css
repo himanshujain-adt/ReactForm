@@ -420,3 +420,29 @@ form {
 .popup-content button:hover {
   background-color: #0056b3;
 }
+
+.suggestions-list {
+  list-style-type: none;
+  padding: 0;
+  margin-top: 5px;
+  max-height: 150px;
+  overflow-y: auto;
+  background-color: white;
+  position: absolute;
+  width: 19.5%;
+  z-index: 1;
+}
+
+.suggestions-list li {
+  padding: 5px;
+  cursor: pointer;
+}
+
+.suggestions-list li:hover {
+  background-color: #7fa3eb;
+}
+
+.suggestion-item {
+  cursor: pointer;
+ 
+}

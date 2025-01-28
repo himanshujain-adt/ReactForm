@@ -10,7 +10,6 @@ const CandidateForm = () => {
 
   const [selectedDays, setSelectedDays] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [suggestedValues, setSuggestedValues] = useState([]);
   const [formData, setFormData] = useState({
     candidateId: 'C12345',
     jobTitles: [],
@@ -90,7 +89,6 @@ const CandidateForm = () => {
   const [file, setFile] = useState(null);  // To store the file object
   const [uploading, setUploading] = useState(false);  // To track if the file is being uploaded
   const [progress, setProgress] = useState(0);
-  const [filteredSuggestions, setFilteredSuggestions] = useState([]);
 
 
   const handleFileChange = (e) => {
@@ -125,8 +123,26 @@ const CandidateForm = () => {
     setProgress(0);
   };
 
+
+  useEffect(() => {
+    const typed = new Typed(typedRef.current, {
+      strings: ['Candidate Details'],
+      typeSpeed: 50,
+      backSpeed: 50,
+      backDelay: 2000,
+      startDelay: 500,
+      loop: true,
+      showCursor: true,
+      cursorChar: '|'
+    });
+
+    return () => {
+      typed.destroy();
+    };
+  }, []);
+
   const locations = ['Work From Home (WFH)', 'Work From Office (WFO)', 'Hybrid'];
-  const jobTypes = ['Full Time', 'Part Time', 'Contract', 'Internship'];
+  const jobTypes= ['Full Time', 'Part Time', 'Contract', 'Internship'];
   const handleLocationToggle = (location) => {
     setSelectedLocations((prev) =>
       prev.includes(location)
@@ -149,10 +165,10 @@ const CandidateForm = () => {
       ) {
         setIsLocationOpen(false);
       }
-      if (
+      if(
         jobTypedropdownRef.current &&
         !jobTypedropdownRef.current.contains(event.target)
-      ) {
+      ){
         setIsJobTypeOpen(false);
       }
 
@@ -361,43 +377,9 @@ const CandidateForm = () => {
     const value = e.target.value;
     setFormData({ ...formData, candidateEmail: value });
   };
-  const salarySuggestions = [
-    "$25000",
-    "$50000",
-    "$75000",
-    "$100000",
-    "$150000",
-    "$200000"
-  ];
-  const formatSalary = (salary) => {
-    // Format salary value with commas and add the dollar sign back
-    return salary.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
-  };
 
   const handleSalaryChange = (e) => {
-    const value = e.target.value;
-
-    // Remove any non-numeric characters (except for periods)
-    const formattedValue = value.replace(/[^0-9.]/g, '');
-
-
-    // Update form data
-    setFormData((prevData) => ({ ...prevData, minimumSalary: formattedValue }));
-
-    // Filter suggestions based on user input
-    if (formattedValue) {
-      const filtered = salarySuggestions.filter(suggestion =>
-        suggestion.replace(/[^0-9]/g, '').includes(formattedValue)
-      );
-      setFilteredSuggestions(filtered);
-    } else {
-      setFilteredSuggestions([]);
-    }
-  };
-  const handleSuggestionClick = (suggestion) => {
-    // Set the selected suggestion to the input field
-    setFormData((prevData) => ({ ...prevData, minimumSalary: suggestion }));
-    setFilteredSuggestions([]); // Hide suggestions after selection
+    setFormData({ ...formData, minimumSalary: e.target.value });
   };
 
   const handleInputChange = (e) => {
@@ -420,7 +402,7 @@ const CandidateForm = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="candidate-details-header mb-3">
-            <h2 className="header-title">   <span> Candidate Details </span></h2>
+            <h2 className="header-title">   <span ref={typedRef}> Candidate Details </span></h2>
           </div>
 
           <form onSubmit={handleFormSubmit}>
@@ -688,31 +670,17 @@ const CandidateForm = () => {
                 transition={{ duration: 0.6, delay: 0.6 }}
               >
                 <div className="form-group">
-                  <label className="form-label">Minimum Salary ($)</label>
+                  <label className="form-label">Minimum Salary</label>
                   <motion.input
-                    type="text"
+                    type="number"
                     className={`form-control form-input rounded-3 ${errors.minimumSalary ? 'is-invalid' : ''}`}
-                    placeholder="e.g $ 25000"
+                    placeholder="e.g 25000"
                     value={formData.minimumSalary}
                     onChange={handleSalaryChange}
                     whileHover={{ scale: 1.05 }} // Hover scale
                     transition={{ duration: 0.2 }}
                   />
                   {errors.minimumSalary && <div className="invalid-feedback">{errors.minimumSalary}</div>}
-                  {filteredSuggestions.length > 0 && (
-                    <ul className="suggestions-list">
-                      {filteredSuggestions.map((suggestion, index) => (
-                        <li
-                          key={index}
-                          onClick={() => handleSuggestionClick(suggestion)}
-                          className="suggestion-item"
-                        >
-                          {formatSalary(suggestion?.replace('$', '$'))} {/* Add commas back for formatting */}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
                 </div>
               </motion.div>
 
@@ -777,7 +745,7 @@ const CandidateForm = () => {
                       transition={{ duration: 0.3 }}
                     >
                       {/* {['Full Time', 'Part Time', 'Contract', 'Internship'] */}
-                      {jobTypes.map((jobType) => (
+                     { jobTypes.map((jobType) => (
                         <div key={jobType} className="form-check mb-2">
                           <input
                             className="form-check-input border border-dark"
@@ -898,7 +866,7 @@ const CandidateForm = () => {
                   },
                   {
                     label: 'Desired Company Size',
-                    placeholder: 'e.g 0-50',
+                    placeholder: 'e.g Multinational',
                     name: 'desiredCompanySize',
                     pattern: "^[a-zA-Z0-9\\s]+$"
                   },
@@ -949,101 +917,72 @@ const CandidateForm = () => {
             </div>
 
             <div className="exclusions mt-5">
-  <h3 className="section-title">Exclusions:</h3>
-  <div className="row g-4 mt-2">
-    {[
-      {
-        label: 'Undesired Companies',
-        placeholder: 'e.g Deloitte Consulting ',
-        name: 'undesiredCompanies',
-        pattern: "^[a-zA-Z0-9\\s]+$"
-      },
-      {
-        label: 'Undesired Industries',
-        placeholder: 'e.g Finance',
-        name: 'undesiredIndustries',
-        pattern: "^[a-zA-Z0-9\\s]+$"
-      },
-      {
-        label: 'Undesired Company Size',
-        placeholder: 'e.g 0-50',
-        name: 'undesiredCompanySize',
-        pattern: "^[a-zA-Z0-9\\s]+$",
-        suggestions: ['0-50', '51-200', '201-500', '500+'] // Suggestions for this field
-      },
-      {
-        label: 'Undesired Location',
-        placeholder: 'e.g New York',
-        name: 'undesiredLocation',
-        pattern: "^[a-zA-Z0-9\\s]+$"
-      }
-    ].map(({ label, placeholder, name, pattern, suggestions }) => (
-      <motion.div
-        key={label}
-        className="col-md-6"
-        initial={{ opacity: 0, x: 50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8, delay: 1.2 }}
-      >
-        <div className="form-group">
-          <label className="form-label">{label}</label>
-          <motion.input
-            type="text"
-            className={`form-control form-input rounded-3 ${errors[name] ? 'is-invalid' : ''}`}
-            placeholder={placeholder}
-            pattern={pattern}
-            value={formData[name]}
-            onFocus={() => {
-              // Only display suggestions for the 'Undesired Company Size' field
-              if (name === 'undesiredCompanySize' && suggestions) {
-                setSuggestedValues(suggestions);
-              } else {
-                setSuggestedValues([]); // Clear suggestions for other fields
-              }
-            }}
-            onBlur={() => setSuggestedValues([])} // Clear suggestions on blur
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === '' || new RegExp(pattern).test(value)) {
-                setFormData({ ...formData, [name]: value });
-                if (errors[name]) {
-                  setErrors(prev => ({
-                    ...prev,
-                    [name]: ''
-                  }));
-                }
-              }
-            }}
-          />
-          {errors[name] && (
-            <div className="invalid-feedback d-block">
-              {errors[name]}
+              <h3 className="section-title">Exclusions:</h3>
+              <div className="row g-4 mt-2">
+                {[
+                  {
+                    label: 'Undesired Companies',
+                    placeholder: 'e.g Deloitte Consulting ',
+                    name: 'undesiredCompanies',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Undesired Industries',
+                    placeholder: 'e.g Finance',
+                    name: 'undesiredIndustries',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Undesired Company Size',
+                    placeholder: 'e.g Startup',
+                    name: 'undesiredCompanySize',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  },
+                  {
+                    label: 'Undesired Location',
+                    placeholder: 'e.g New York',
+                    name: 'undesiredLocation',
+                    pattern: "^[a-zA-Z0-9\\s]+$"
+                  }
+                ].map(({ label, placeholder, name, pattern }) => (
+                  <motion.div
+                    key={label}
+                    className="col-md-6"
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, delay: 1.2 }}
+                  >
+                    <div className="form-group">
+                      <label className="form-label">{label}</label>
+                      <motion.input
+                        type="text"
+                        className={`form-control form-input rounded-3 ${errors[name] ? 'is-invalid' : ''}`}
+                        placeholder={placeholder}
+                        pattern={pattern}
+                        value={formData[name]}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || new RegExp(pattern).test(value)) {
+                            setFormData({ ...formData, [name]: value });
+                            if (errors[name]) {
+                              setErrors(prev => ({
+                                ...prev,
+                                [name]: ''
+                              }));
+                            }
+                          }
+                        }}
+                      />
+                      {errors[name] && (
+                        <div className="invalid-feedback d-block">
+                          {errors[name]}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
-          )}
-
-          {/* Render suggestions */}
-          {name === 'undesiredCompanySize' && suggestedValues.length > 0 && (
-            <div className="suggestions-list">
-              {suggestedValues.map((suggestion, index) => (
-                <div
-                  key={index}
-                  className="suggestion-item"
-                  onClick={() => {
-                    setFormData({ ...formData, [name]: suggestion });
-                    setSuggestedValues([]); // Clear suggestions after selecting
-                  }}
-                >
-                  {suggestion}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </motion.div>
-    ))}
-  </div>
-</div>
-
 
 
 
