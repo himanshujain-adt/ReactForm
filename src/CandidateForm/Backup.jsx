@@ -1,9 +1,5 @@
 import { motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
-import { FaTimes } from 'react-icons/fa'; // For the "X" icon from FontAwesome
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
-
 import uploadIcon from "../assets/upload-resume.png";
 import "./CandidateForm.css";
 import { FaSearch } from "react-icons/fa";
@@ -11,7 +7,6 @@ import axios from "axios";
 const CandidateForm = () => {
   const [selectedDays, setSelectedDays] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [suggestedValues, setSuggestedValues] = useState([]);
   const [input, setInput] = useState("");
   const popupRef = useRef(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -45,132 +40,6 @@ const CandidateForm = () => {
     window.location.reload();
     // Reset the form here if needed
   };
-
-  //search bar logic 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedJobs, setSelectedJobs] = useState([]);
-  const [suggestions, setSuggestions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [cachedResults, setCachedResults] = useState({});
-  const wrapperRef = useRef(null);
-  const inputRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Debounce function to delay API requests until typing stops
-  const debounce = (func, delay) => {
-    let timeoutId;
-    return (...args) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func(...args), delay);
-    };
-  };
-
-  const fetchJobSuggestions = async (query) => {
-    const lowercaseQuery = query.toLowerCase();
-
-    // Check if the results are already cached (case-insensitive check)
-    if (cachedResults[lowercaseQuery]) {
-      setSuggestions(cachedResults[lowercaseQuery]);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `https://api.adzuna.com/v1/api/jobs/us/search/1?app_id=d20195d7&app_key=4e0785601f4374e5976c90d54d196198&results_per_page=10&what=${query}`,
-        {
-          method: 'GET',
-        }
-      );
-
-      const data = await response.json();
-
-      // Filter out already selected jobs from suggestions
-      const jobTitles = data.results
-        .map((job) => job.title)
-        .filter((title) => !selectedJobs.includes(title))
-        .filter((title, index, self) => self.indexOf(title) === index)
-        .slice(0, 10);
-
-      setSuggestions(jobTitles);
-
-      // Cache the results with the normalized lowercase query
-      setCachedResults((prev) => ({ ...prev, [lowercaseQuery]: jobTitles }));
-    } catch (error) {
-      console.error('Error fetching job suggestions:', error);
-      setSuggestions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Debounced version of fetchJobSuggestions
-  const debouncedFetch = debounce(fetchJobSuggestions, 500);
-
-  const handleJobInputChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-
-    const terms = value.split(',').map((term) => term.trim());
-    const lastTerm = terms[terms.length - 1];
-
-    // If the last term is at least 4 characters long, fetch suggestions
-    if (lastTerm.length >= 4 && lastTerm !== terms[terms.length - 2]) {
-      debouncedFetch(lastTerm); // Call the API for the last term
-      setShowSuggestions(true);
-    } else if (lastTerm.length < 4) {
-      setSuggestions([]); // Hide suggestions if the term is less than 4 characters
-      setShowSuggestions(false);
-    } else {
-      setSuggestions(cachedResults[lastTerm] || []); // Use cache if the last term is already fetched
-    }
-
-    setSelectedIndex(-1);
-  };
-
-  const handleJobSuggestionClick = (suggestion) => {
-    if (!selectedJobs.includes(suggestion)) {
-      setSelectedJobs([...selectedJobs, suggestion]);
-    }
-    setSearchTerm('');
-    setSuggestions([]);
-    setShowSuggestions(false);
-    setSelectedIndex(-1);
-    inputRef.current?.focus();
-  };
-
-  const removeJob = (jobToRemove) => {
-    setSelectedJobs(selectedJobs.filter((job) => job !== jobToRemove));
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
-    } else if (e.key === 'Enter' && selectedIndex >= 0) {
-      handleSuggestionClick(suggestions[selectedIndex]);
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false);
-    } else if (e.key === 'Backspace' && searchTerm === '' && selectedJobs.length > 0) {
-      // Remove the last tag when backspace is pressed and input is empty
-      removeJob(selectedJobs[selectedJobs.length - 1]);
-    }
-  };
-
 
   useEffect(() => {
     // Handle click outside the popup to close it and refresh the page
@@ -234,6 +103,7 @@ const CandidateForm = () => {
   const [progress, setProgress] = useState(0);
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const [filteredSuggestions1, setFilteredSuggestions1] = useState([]);
+  const [filteredSuggestions2, setFilteredSuggestions2] = useState([]);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -910,6 +780,12 @@ const CandidateForm = () => {
     "151-500",
     "501-1000",
   ];
+  const UndesiredCompanySizeSuggestion = [
+    "0-50",
+    "51-150",
+    "151-500",
+    "501-1000",
+  ]
 
   const handleDesiredCompanySizeChange = (e) => {
     const value = e.target.value;
@@ -945,6 +821,16 @@ const CandidateForm = () => {
       ...prevData,
       undesiredCompanySize: formattedValue,
     }));
+
+    // Filter suggestions based on user input
+    if (formattedValue) {
+      const filtered = UndesiredCompanySizeSuggestion.filter((suggestion) =>
+        suggestion.replace(/[^0-9]/g, "").includes(formattedValue)
+      );
+      setFilteredSuggestions2(filtered);
+    } else {
+      setFilteredSuggestions2([]);
+    }
   };
 
   const handleSuggestionClick1 = (suggestion) => {
@@ -954,6 +840,14 @@ const CandidateForm = () => {
       desiredCompanySize: suggestion,
     }));
     setFilteredSuggestions1([]); // Hide suggestions after selection
+  };
+  const handleSuggestionClick2 = (suggestion) => {
+    // Set the selected suggestion to the input field
+    setFormData((prevData) => ({
+      ...prevData,
+      undesiredCompanySize: suggestion,
+    }));
+    setFilteredSuggestions2([]); // Hide suggestions after selection
   };
 
   return (
@@ -1080,7 +974,7 @@ const CandidateForm = () => {
               </motion.div>
 
               {/* Target Job Title */}
-              {/* <motion.div
+              <motion.div
                 className="col-md-6"
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -1091,98 +985,20 @@ const CandidateForm = () => {
                   <label className="form-label">Target Job Title</label>
                   <input
                     type="text"
-                    ref={inputRef}
                     className={`form-control form-input rounded-3 bold-text ${errors.jobTitles ? "is-invalid" : ""
                       }`}
-                  
-                    value={searchTerm}
-                    onChange={handleJobInputChange}
-                    onKeyDown={handleKeyDown}
-                    placeholder={selectedJobs.length === 0 ? 'Search for job titles...' : 'Add another job title...'}
+                    placeholder="e.g Java Developer"
+                    value={
+                      Array.isArray(formData.jobTitles)
+                        ? formData.jobTitles.join(", ")
+                        : formData.jobTitles
+                    }
+                    onChange={handleJobTitleChange}
                   />
 
                   {errors.jobTitles && (
                     <div className="invalid-feedback">{errors.jobTitles}</div>
                   )}
-                    {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute w-full mt-1 bg-white border rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
-          {suggestions.map((suggestion, index) => (
-            <div
-              key={index}
-              className={`px-4 py-2 cursor-pointer ${
-                index === selectedIndex ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-100'
-              }`}
-              onClick={() => handleJobSuggestionClick(suggestion)}
-              onMouseEnter={() => setSelectedIndex(index)}
-            >
-              {suggestion}
-            </div>
-          ))}
-        </div>
-      )}
-                </div>
-              </motion.div> */}
-              {/* Target Job Title */}
-              {/* Target Job Title */}
-              {/* Target Job Title */}
-              <motion.div
-                className="col-md-6"
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                <div className="form-group">
-                  <label className="form-label">Target Job Title</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      ref={inputRef}
-                      className={`form-control form-input rounded-3 bold-text ${errors.jobTitles ? "is-invalid" : ""}`}
-                      value={searchTerm}
-                      onChange={handleJobInputChange}
-                      onKeyDown={handleKeyDown}
-                      placeholder={selectedJobs.length === 0 ? 'Search for job titles...' : 'Add another job title...'}
-                    />
-
-                    {/* Display Error */}
-                    {errors.jobTitles && (
-                      <div className="invalid-feedback">{errors.jobTitles}</div>
-                    )}
-
-                    {/* Suggestions */}
-                    {showSuggestions && suggestions.length > 0 && (
-                      <div className="absolute w-full mt-1 bg-white border rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
-                        {suggestions.map((suggestion, index) => (
-                          <div
-                            key={index}
-                            className={`px-4 py-2 cursor-pointer ${index === selectedIndex ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-100'}`}
-                            onClick={() => handleJobSuggestionClick(suggestion)}
-                            onMouseEnter={() => setSelectedIndex(index)}
-                          >
-                            {suggestion}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Display Selected Jobs */}
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedJobs.map((job, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-md"
-                      >
-                        <span className="text-sm">{job}</span>
-                        <button
-                          onClick={() => removeJob(job)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                       <FaTimes size={14} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </motion.div>
 
@@ -1750,47 +1566,32 @@ const CandidateForm = () => {
                     <motion.input
                       type="text"
                       className={`form-control form-input rounded-3 ${errors.undesiredCompanySize ? "is-invalid" : ""}`}
-                      placeholder="e.g 0-50"
+                      placeholder="e.g 0-51"
                       value={formData.undesiredCompanySize}
-                      onFocus={() => {
-                        setSuggestedValues(suggestions);
-                      }}
-                      onBlur={() => setSuggestedValues([])}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        // Only allow digits to be entered
-                        //  const newValue = value.replace(/\D/g, ""); // Remove any non-digit characters
-                        const newValue = value.replace(/[^0-9+-]/g, "");
-                        setFormData({
-                          ...formData,
-                          undesiredCompanySize: newValue,
-                        });
-                      }}
+                     
+                      onChange={handleUnDesiredCompanySizeChange}
                     />
                     {errors.undesiredCompanySize && (
                       <div className="invalid-feedback d-block">
                         {errors.undesiredCompanySize}
                       </div>
                     )}
-                    {suggestedValues.length > 0 && (
-                      <div className="suggestions-list">
-                        {suggestedValues.map((suggestion, index) => (
-                          <div
+                     {/* Company Size Suggestions Dropdown */}
+                     {filteredSuggestions2.length > 0 && (
+                      <ul className="suggestions-list ">
+                        {filteredSuggestions2.map((suggestion, index) => (
+                          <li
                             key={index}
-                            className="suggestion-item"
-                            onClick={() => {
-                              setFormData({
-                                ...formData,
-                                undesiredCompanySize: suggestion,
-                              });
-                              setSuggestedValues([]);
-                            }}
+                            onClick={() => handleSuggestionClick2(suggestion)}
+                            className="suggestion-item "
+                            
                           >
                             {suggestion}
-                          </div>
+                          </li>
                         ))}
-                      </div>
+                      </ul>
                     )}
+                   
                   </div>
                 </motion.div>
 

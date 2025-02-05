@@ -3,6 +3,9 @@
   background-color: #B1C2F8;
   padding: 3rem 0;
 }
+.container{
+  z-index: 1;
+}
 
 .form-container {
   max-width: 750px;
@@ -33,7 +36,26 @@
   font-weight: bold;
   margin-bottom: 0;
   color: white;
+  text-align: center;
 
+}
+
+/* For tablets or medium screens */
+@media (max-width: 768px) {
+  .header-title {
+    font-size: 5vw;
+    /* Adjust font size for tablet screens */
+  }
+}
+
+/* For small mobile screens */
+@media (max-width: 480px) {
+  .header-title {
+    font-size: 6vw;
+    /* Increase font size for small screens */
+    letter-spacing: 1px;
+    /* Adjust letter-spacing to fit better */
+  }
 }
 
 form {
@@ -66,7 +88,7 @@ form {
 .form-control {
   border: 1px solid #DAE3ED;
   border-radius: 0.75rem;
-  
+
 }
 
 .section-title {
@@ -212,7 +234,7 @@ form {
 .upload-resume button {
   background-color: rgba(177, 194, 248, 0.56);
   width: 500px;
-  padding:5px;
+  padding: 5px;
   border-radius: 0.75rem;
   display: block;
   margin: auto;
@@ -358,7 +380,8 @@ form {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: #4CAF50;  /* Example button color */
+  background-color: #4CAF50;
+  /* Example button color */
   color: white;
   border: none;
   border-radius: 2px;
@@ -367,7 +390,8 @@ form {
 }
 
 .upload-button:hover {
-  background-color: #45a049; /* Hover effect */
+  background-color: #45a049;
+  /* Hover effect */
 }
 
 .upload-label {
@@ -387,6 +411,7 @@ form {
   font-weight: bold;
   color: #20262d;
 }
+
 .popup {
   position: fixed;
   top: 0;
@@ -429,7 +454,7 @@ form {
   overflow-y: auto;
   background-color: white;
   position: absolute;
-  width: 19.5%;
+  width: auto;
   z-index: 1;
 }
 
@@ -439,10 +464,49 @@ form {
 }
 
 .suggestions-list li:hover {
-  background-color: #7fa3eb;
+  background-color: #edf0f6;
 }
 
 .suggestion-item {
   cursor: pointer;
- 
+
+}
+
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  width: 300px;
+  text-align: center;
+}
+
+.popup-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.jobSuggestionList {
+  border: 1px solid #ccc;
+  max-height: 200px;
+  overflow-y: auto;
+  position: absolute;
+  background-color: white;
+  max-width: 50%;
+  z-index: 1200;
 }
