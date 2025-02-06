@@ -83,58 +83,54 @@ const CandidateForm = () => {
     };
   };
 
-  const fetchJobSuggestions = async (query) => {
-    const lowercaseQuery = query.toLowerCase();
+ 
+const fetchJobSuggestions = async (query) => {
+  if (!query) return; // Handle empty query input
+  
+  const lowercaseQuery = query.toLowerCase();
+  
+  // Check if results are already cached (in useState)
+  if (cachedResults[lowercaseQuery]) {
+    setSuggestions(cachedResults[lowercaseQuery]);
+    return;
+  }
 
-    // Check if the results are already cached (case-insensitive check)
-    if (cachedResults[lowercaseQuery]) {
-      setSuggestions(cachedResults[lowercaseQuery]);
-      return;
+  setLoading(true);
+  try {
+    const response = await fetch(`http://3.110.181.207:8087/getSuggestions/${query}`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch job suggestions: ${response.statusText}`);
     }
 
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `https://api.adzuna.com/v1/api/jobs/us/search/1?app_id=d20195d7&app_key=4e0785601f4374e5976c90d54d196198&results_per_page=10&what=${query}`,
-        {
-          method: "GET",
-        }
-      );
+    const data = await response.json();
 
-      const data = await response.json();
-
-      // Filter out already selected jobs from suggestions
-      const jobTitles = data.results
-        .map((job) => job.title)
-        .filter((title) => !selectedJobs.includes(title))
-        .filter((title, index, self) => self.indexOf(title) === index)
-        .slice(0, 10);
-
-      setSuggestions(jobTitles);
-
-      // Cache the results with the normalized lowercase query
-      setCachedResults((prev) => ({ ...prev, [lowercaseQuery]: jobTitles }));
-    } catch (error) {
-      console.error("Error fetching job suggestions:", error);
-      setSuggestions([]);
-    } finally {
-      setLoading(false);
+    if (!Array.isArray(data)) {
+      throw new Error("Invalid response format: data is not an array");
     }
-  };
+
+    // Filter out already selected jobs from suggestions and remove duplicates
+    const jobTitles = [...new Set(data
+      .filter((title) => !selectedJobs.includes(title)) // Exclude selected jobs
+    )].slice(0, 10); // Limit to 10 suggestions
+
+    setSuggestions(jobTitles);
+
+    // Cache the results in useState
+    setCachedResults((prev) => ({ ...prev, [lowercaseQuery]: jobTitles }));
+  } catch (error) {
+    console.error("Error fetching job suggestions:", error);
+    setSuggestions([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Debounced version of fetchJobSuggestions
-  const debouncedFetch = debounce(fetchJobSuggestions, 500);
+  const debouncedFetch = debounce(fetchJobSuggestions, 200);
 
-  // const getJobTitlesForPayload = () => {
-  //   // Combine selected jobs and the searchTerm (if not already included)
-  //   let allJobTitles = [...selectedJobs];
-
-  //   if (searchTerm && !selectedJobs.includes(searchTerm)) {
-  //     allJobTitles.push(searchTerm);  // Add search term to the list if it's not already included
-  //   }
-
-  //   return allJobTitles;
-  // };
   const getJobTitlesForPayload = () => {
     // Step 1: Split searchTerm into separate job titles if there's any comma (assuming user enters comma-separated values)
     const searchTermTitles = searchTerm.split(',')
@@ -152,13 +148,7 @@ const CandidateForm = () => {
   const handleJobInputChange = (e) => {
     const value = e.target.value;
    // console.log("value", value);
-    // if (!value) {
-    //   setFormData(prevData => ({
-    //     ...prevData,
-    //     jobTitles: value  // Set the jobTitles field to the trimmed values
-    //   }));
-    //   return;
-    // }
+   
     setSearchTerm(value);
     setShowSuggestions(true);
 
@@ -782,37 +772,6 @@ const CandidateForm = () => {
     return displayMap1[apiValue] || apiValue;
   };
 
-  // Function to handle checkbox toggle
-  // const handleJobCheckboxToggle = (suggestion) => {
-  //   if (selectedJobs.includes(suggestion)) {
-  //     // If the suggestion is already selected, remove it from selectedJobs
-  //     setSelectedJobs(selectedJobs.filter(job => job !== suggestion));
-  //     setFormData({ ...formData, jobTitles: selectedJobs });
-  //   } else {
-  //     // Otherwise, add the suggestion to selectedJobs
-  //     setSelectedJobs([...selectedJobs, suggestion]);
-  //   }
-  // };
-
-  // const handleJobCheckboxToggle = (suggestion) => {
-
-  //   setSelectedJobs(prev => {
-  //     // Toggle the selected suggestion in the array
-  //     const newJobTitle = prev.includes(suggestion)
-  //       ? prev.filter(loc => loc !== suggestion)  // Remove suggestion if it's already selected
-  //       : [...prev, suggestion];  // Add suggestion if it's not selected
-  //     setSearchTerm(newJobTitle);
-  //     // Update formData with the new jobTitle array
-  //     setFormData(prevData => ({
-  //       ...prevData,
-  //       jobTitles: newJobTitle.map((e) => e.trim())  // Set the jobTitles field to the trimmed values
-  //     }));
-
-  //     // Return the updated selectedJobs array
-  //     return newJobTitle;
-  //   });
-  // };
-
   const handleJobCheckboxToggle = (suggestion) => {
     setSelectedJobs((prev) => {
       let updatedJobs = [...prev]; // Copy previous selected jobs
@@ -994,23 +953,12 @@ const CandidateForm = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-  // const handleCurrencyChange = (e) => {
-  //   const value = e.target.value;
-  //   // Remove non-numeric characters and format the value as currency
-  //   const formattedValue = value
-  //     .replace(/[^\d.]/g, '') // Remove non-numeric characters except period
-  //     .replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,'); // Add commas as thousand separators
-  //   console.log("currency Value==>>>", formattedValue);
-  //   setFormData((prevData) => ({ ...prevData, lowestSalary: formattedValue }));
-  // };
-
   const DesiredIndustriesSuggestions = [
     "0-50",
     "51-150",
     "151-500",
     "501-1000",
   ];
-
   const handleDesiredCompanySizeChange = (e) => {
     const value = e.target.value;
 
@@ -1209,81 +1157,79 @@ const CandidateForm = () => {
 
               {/* Target Job Title */}
               <motion.div
-                className="col-md-6"
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                <div className="form-group">
-                  <label className="form-label">Target Job Title</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      ref={inputRef}
-                      className={`form-control form-input rounded-3 bold-text ${
-                        errors.jobTitles ? "is-invalid" : ""
-                      }`}
-                      value={searchTerm}
-                      onChange={handleJobInputChange}
-                      onKeyDown={handleKeyDown}
-                    //  onFocus={{ setSearchTerm: "" }}
-                      placeholder={
-                        selectedJobs.length === 0
-                          ? "Search for job titles..."
-                          : "Add another job title..."
-                      }
-                    />
+  className="col-md-6"
+  initial={{ opacity: 0, x: -50 }}
+  animate={{ opacity: 1, x: 0 }}
+  transition={{ duration: 0.6, delay: 0.2 }}
+>
+  <div className="form-group">
+    <label className="form-label">Target Job Title</label>
+    <div className="relative">
+      <input
+        type="text"
+        ref={inputRef}
+        className={`form-control form-input rounded-3 bold-text ${
+          errors.jobTitles ? "is-invalid" : ""
+        }`}
+        value={searchTerm}
+        onChange={handleJobInputChange}
+        onKeyDown={handleKeyDown}
+        placeholder={
+          selectedJobs.length === 0
+            ? "Search for job titles..."
+            : "Add another job title..."
+        }
+      />
 
-                    {/* Display Error */}
-                    {errors.jobTitles && (
-                      <div className="invalid-feedback">{errors.jobTitles}</div>
-                    )}
+      {/* Display Error */}
+      {errors.jobTitles && (
+        <div className="invalid-feedback">{errors.jobTitles}</div>
+      )}
 
-                    {/* Suggestions */}
-                    {showSuggestions && suggestions.length > 0 && (
-                      <ul className="suggestions-list" ref={suggestionsListRef}>
-                        {suggestions.map((suggestion, index) => (
-                          <li
-                            key={index}
-                            className="suggestion-item"
-                            onMouseEnter={() => setSelectedIndex(index)}
-                            style={{
-                              zIndex: 1200,
-                              width: "230px",
-                              listStyleType: "none",
-                            }}
-                          >
-                            {/* Checkbox for each suggestion */}
-                            <input
-                              type="checkbox"
-                              checked={selectedJobs.includes(suggestion)} // Check if the job is selected
-                              onChange={() =>
-                                handleJobCheckboxToggle(suggestion)
-                              } // Handle checkbox change
-                              className="form-checkbox"
-                            />
-                            <span
-                              onClick={() =>
-                                handleJobSuggestionClick(suggestion)
-                              }
-                            >
-                              {suggestion}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+      {/* Suggestions */}
+     {/* Suggestions */}
+{showSuggestions && suggestions.length > 0 && (
+  <ul className="suggestions-list" ref={suggestionsListRef}>
+    {suggestions.map((suggestion, index) => (
+      <li
+        key={index}
+        className="suggestion-item"
+        onMouseEnter={() => setSelectedIndex(index)}
+        style={{
+          zIndex: 1200,
+          width: "230px",
+          listStyleType: "none",
+        }}
+      >
+        {/* Checkbox for each suggestion */}
+        <input
+          type="checkbox"
+          checked={selectedJobs.includes(suggestion)} // Ensure checkbox is checked if job is in selectedJobs
+          onChange={() => handleJobCheckboxToggle(suggestion)} // Handle checkbox toggle
+          className="form-checkbox"
+        />
+        <span
+          onClick={() => handleJobSuggestionClick(suggestion)}
+        >
+          {suggestion}
+        </span>
+      </li>
+    ))}
+  </ul>
+)}
 
-                    {/* Display the number of selected jobs */}
-                    {selectedJobs.length > 0 && (
-                      <div className="selected-jobs-info mt-2 text-sm text-gray-600">
-                        You have selected {selectedJobs.length} job
-                        {selectedJobs.length > 1 ? "s" : ""}.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
+
+      {/* Display the number of selected jobs */}
+      {selectedJobs.length > 0 && (
+        <div className="selected-jobs-info mt-2 text-sm text-gray-600">
+          You have selected {selectedJobs.length} job
+          {selectedJobs.length > 1 ? "s" : ""}.
+        </div>
+      )}
+    </div>
+  </div>
+</motion.div>
+
 
               {/* Job Location */}
               <motion.div
