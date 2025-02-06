@@ -43,7 +43,7 @@
 /* For tablets or medium screens */
 @media (max-width: 768px) {
   .header-title {
-    font-size: 5vw;
+    font-size: 4vw;
     /* Adjust font size for tablet screens */
   }
 }
@@ -509,4 +509,9 @@ form {
   background-color: white;
   max-width: 50%;
   z-index: 1200;
+}
+
+.resumeName{
+color: #007bff;
+padding-top: 2%;
 }

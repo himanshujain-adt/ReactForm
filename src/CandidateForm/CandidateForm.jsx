@@ -1,17 +1,13 @@
 import { motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
-import { FaTimes } from 'react-icons/fa'; // For the "X" icon from FontAwesome
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
-
 import uploadIcon from "../assets/upload-resume.png";
 import "./CandidateForm.css";
 import { FaSearch } from "react-icons/fa";
 import axios from "axios";
 const CandidateForm = () => {
   const [selectedDays, setSelectedDays] = useState([]);
+  const [filteredSuggestions2, setFilteredSuggestions2] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [suggestedValues, setSuggestedValues] = useState([]);
   const [input, setInput] = useState("");
   const popupRef = useRef(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -37,6 +33,7 @@ const CandidateForm = () => {
     candidateName: "",
     modifiedScore: "",
     modifiedSalary: "",
+    candidateResumeName: "",
   });
   const [isPopupVisible, setPopupVisible] = useState(false);
 
@@ -46,8 +43,8 @@ const CandidateForm = () => {
     // Reset the form here if needed
   };
 
-  //search bar logic 
-  const [searchTerm, setSearchTerm] = useState('');
+  //search bar logic
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedJobs, setSelectedJobs] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -56,15 +53,25 @@ const CandidateForm = () => {
   const [cachedResults, setCachedResults] = useState({});
   const wrapperRef = useRef(null);
   const inputRef = useRef(null);
+  const suggestionsListRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
         setShowSuggestions(false);
       }
+      if (
+        inputRef.current &&
+        !inputRef.current.contains(event.target) && // Check if clicked outside input field
+        suggestionsListRef.current &&
+        !suggestionsListRef.current.contains(event.target) // Check if clicked outside suggestions list
+      ) {
+        setShowSuggestions(false); // Close suggestions
+      }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Debounce function to delay API requests until typing stops
@@ -90,7 +97,7 @@ const CandidateForm = () => {
       const response = await fetch(
         `https://api.adzuna.com/v1/api/jobs/us/search/1?app_id=d20195d7&app_key=4e0785601f4374e5976c90d54d196198&results_per_page=10&what=${query}`,
         {
-          method: 'GET',
+          method: "GET",
         }
       );
 
@@ -108,7 +115,7 @@ const CandidateForm = () => {
       // Cache the results with the normalized lowercase query
       setCachedResults((prev) => ({ ...prev, [lowercaseQuery]: jobTitles }));
     } catch (error) {
-      console.error('Error fetching job suggestions:', error);
+      console.error("Error fetching job suggestions:", error);
       setSuggestions([]);
     } finally {
       setLoading(false);
@@ -118,15 +125,48 @@ const CandidateForm = () => {
   // Debounced version of fetchJobSuggestions
   const debouncedFetch = debounce(fetchJobSuggestions, 500);
 
+  // const getJobTitlesForPayload = () => {
+  //   // Combine selected jobs and the searchTerm (if not already included)
+  //   let allJobTitles = [...selectedJobs];
+
+  //   if (searchTerm && !selectedJobs.includes(searchTerm)) {
+  //     allJobTitles.push(searchTerm);  // Add search term to the list if it's not already included
+  //   }
+
+  //   return allJobTitles;
+  // };
+  const getJobTitlesForPayload = () => {
+    // Step 1: Split searchTerm into separate job titles if there's any comma (assuming user enters comma-separated values)
+    const searchTermTitles = searchTerm.split(',')
+      .map((title) => title.trim())
+      .filter(Boolean);
+
+    // Step 2: Combine the selected jobs and the searchTerm titles
+    let allJobTitles = [...selectedJobs, ...searchTermTitles];
+
+    // Step 3: Remove duplicates by converting to a Set, then back to an array
+    allJobTitles = Array.from(new Set(allJobTitles));
+
+    return allJobTitles;
+  };
   const handleJobInputChange = (e) => {
     const value = e.target.value;
+   // console.log("value", value);
+    // if (!value) {
+    //   setFormData(prevData => ({
+    //     ...prevData,
+    //     jobTitles: value  // Set the jobTitles field to the trimmed values
+    //   }));
+    //   return;
+    // }
     setSearchTerm(value);
+    setShowSuggestions(true);
 
-    const terms = value.split(',').map((term) => term.trim());
+    const terms = value.split(",").map((term) => term.trim());
     const lastTerm = terms[terms.length - 1];
 
     // If the last term is at least 4 characters long, fetch suggestions
-    if (lastTerm.length >= 4 && lastTerm !== terms[terms.length - 2]) {
+    if (lastTerm.length === 3 || lastTerm.length === 6) {
       debouncedFetch(lastTerm); // Call the API for the last term
       setShowSuggestions(true);
     } else if (lastTerm.length < 4) {
@@ -143,7 +183,7 @@ const CandidateForm = () => {
     if (!selectedJobs.includes(suggestion)) {
       setSelectedJobs([...selectedJobs, suggestion]);
     }
-    setSearchTerm('');
+    setSearchTerm("");
     setSuggestions([]);
     setShowSuggestions(false);
     setSelectedIndex(-1);
@@ -155,22 +195,27 @@ const CandidateForm = () => {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'ArrowDown') {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev));
-    } else if (e.key === 'ArrowUp') {
+      setSelectedIndex((prev) =>
+        prev < suggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
-    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+    } else if (e.key === "Enter" && selectedIndex >= 0) {
       handleSuggestionClick(suggestions[selectedIndex]);
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setShowSuggestions(false);
-    } else if (e.key === 'Backspace' && searchTerm === '' && selectedJobs.length > 0) {
+    } else if (
+      e.key === "Backspace" &&
+      searchTerm === "" &&
+      selectedJobs.length > 0
+    ) {
       // Remove the last tag when backspace is pressed and input is empty
       removeJob(selectedJobs[selectedJobs.length - 1]);
     }
   };
-
 
   useEffect(() => {
     // Handle click outside the popup to close it and refresh the page
@@ -227,18 +272,19 @@ const CandidateForm = () => {
   const [isJobTypeOpen, setIsJobTypeOpen] = useState(false);
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [isLocationOpen, setIsLocationOpen] = useState(false);
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState("");
   const [fileName, setFileName] = useState("");
   const [file, setFile] = useState(null); // To store the file object
   const [uploading, setUploading] = useState(false); // To track if the file is being uploaded
   const [progress, setProgress] = useState(0);
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const [filteredSuggestions1, setFilteredSuggestions1] = useState([]);
+  const [showSelectionMessage, setShowSelectionMessage] = useState(false);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      setFileName(selectedFile.name);
+      setFormData({ ...formData, candidateResumeName: selectedFile.name });
       setFile(selectedFile);
       setUploading(true); // Start the upload state
       simulateUploadProgress(); // Simulate upload progress
@@ -260,7 +306,7 @@ const CandidateForm = () => {
 
   // Handle file removal
   const handleRemoveFile = () => {
-    setFileName("");
+    setFormData({ ...formData, candidateResumeName: "" });
     setFile(null);
     setUploading(false);
     setProgress(0);
@@ -281,8 +327,8 @@ const CandidateForm = () => {
   const valueMap = {
     "FULL TIME": "FULL TIME",
     "PART TIME": "PART TIME",
-    "CONTRACT": "CONTRACT",
-    "INTERNSHIP": "INTERNSHIP",
+    CONTRACT: "CONTRACT",
+    INTERNSHIP: "INTERNSHIP",
     // displayToApi: {
     //   "Full Time": "FULL",
     //   "Part Time": "PART",
@@ -296,7 +342,6 @@ const CandidateForm = () => {
     //   INTERNSHIP: "Internship",
     // },
   };
-
 
   const valueDayMap = {
     displayToApi: {
@@ -398,17 +443,17 @@ const CandidateForm = () => {
   };
 
   const handleJobTypeToggle = (jobType) => {
-    setSelectedJobTypes(prev => {
+    setSelectedJobTypes((prev) => {
       const newJobTypes = prev.includes(jobType)
-        ? prev.filter(loc => loc !== jobType)
+        ? prev.filter((loc) => loc !== jobType)
         : [...prev, jobType];
 
       // Convert display values back to API values before updating formData
-      const apiLocations = newJobTypes.map(loc => valueMap[loc] || loc);
+      const apiLocations = newJobTypes.map((loc) => valueMap[loc] || loc);
 
-      setFormData(prevData => ({
+      setFormData((prevData) => ({
         ...prevData,
-        jobType: apiLocations
+        jobType: apiLocations,
       }));
 
       return newJobTypes;
@@ -443,8 +488,9 @@ const CandidateForm = () => {
   const getButtonText = () => {
     if (selectedDays.length === 0) return "Select Day Of The Week";
     if (selectedDays.length === days.length) return "All Days Selected";
-    return `${selectedDays.length} Day${selectedDays.length > 1 ? "s" : ""
-      } Selected`;
+    return `${selectedDays.length} Day${
+      selectedDays.length > 1 ? "s" : ""
+    } Selected`;
   };
   const validate = () => {
     const newErrors = {
@@ -476,8 +522,8 @@ const CandidateForm = () => {
     if (!formData.distributionList || formData.distributionList.length === 0) {
       newErrors.distributionList = "Distribution List is required";
     } else {
-
-      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\s*,\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})*$/;
+      const emailRegex =
+        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\s*,\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})*$/;
 
       if (!emailRegex.test(formData.distributionList)) {
         newErrors.distributionList = "Invalid email format";
@@ -514,7 +560,7 @@ const CandidateForm = () => {
         modifiedSalary = "$" + modifiedSalary;
         // modifiedSalary='$+${modifiedSalary}'
       }
-      formData.modifiedSalary = modifiedSalary
+      formData.modifiedSalary = modifiedSalary;
       console.log("ModifiedSal", modifiedSalary);
     }
 
@@ -526,18 +572,17 @@ const CandidateForm = () => {
 
       if (!modifiedScore.endsWith("%")) {
         modifiedScore = `${modifiedScore}%`;
-
       }
       const numericScore = parseFloat(modifiedScore.slice(0, -1));
 
       if (isNaN(numericScore)) {
-        newErrors.minimumScore = "Please enter a valid numeric value for the score.";
+        newErrors.minimumScore =
+          "Please enter a valid numeric value for the score.";
       } else if (numericScore < 0 || numericScore > 100) {
         newErrors.minimumScore = "Score must be between 0 and 100.";
       }
       formData.modifiedScore = modifiedScore;
       console.log("ModifiedScore===>", modifiedScore);
-
     }
 
     // Job Type validation
@@ -567,12 +612,9 @@ const CandidateForm = () => {
     event.preventDefault();
     const validationErrors = validate();
 
-
     if (validationErrors) {
       setPopupVisible(true);
     }
-
-
   };
   const handleJobTitleChange = (e) => {
     const value = e.target.value;
@@ -588,19 +630,16 @@ const CandidateForm = () => {
 
   const handlePhysicalLocationChange = (e) => {
     const value = e.target.value;
-    const regex = /^[a-zA-Z\s]*$/;
+    const regex = /^[a-zA-Z\s,]*$/;
     if (regex.test(value)) {
       setFormData({ ...formData, physicalLocation: value });
-
     }
   };
 
   const handleCandidateNameChange = (e) => {
     const value = e.target.value;
 
-
     const regex = /^[a-zA-Z\s]*$/;
-
 
     if (regex.test(value)) {
       setFormData({ ...formData, candidateName: value });
@@ -613,18 +652,17 @@ const CandidateForm = () => {
     console.log("errors", newErrors);
 
     if (!newErrors) {
-
       console.log("Validation failed", newErrors);
       alert("Please enter all mandatory fields");
       return;
     }
     const formData2 = new FormData();
-
+    const jobTitlesForPayload = getJobTitlesForPayload();
     const schedule = {
       prefs: {
         candidateId: formData.candidateId,
         candidateName: formData.candidateName,
-        jobTitles: formData.jobTitles ? formData.jobTitles.split(',').map((e) => e.trim()) : [],
+        jobTitles: jobTitlesForPayload.map((title) => title.trim()), // Ensure titles are trimmed
         minimumScore: formData.modifiedScore,
         jobLocations: selectedLocations.map((loc) => {
           switch (loc) {
@@ -653,7 +691,7 @@ const CandidateForm = () => {
           }
         }),
         desiredLocations: formData.desiredLocation
-          ? formData.desiredLocation.split(',').map((e) => e.trim())
+          ? formData.desiredLocation.split(",").map((e) => e.trim())
           : [],
 
         physicalLocation: formData.physicalLocation || "",
@@ -663,7 +701,7 @@ const CandidateForm = () => {
         lowestSalary: formData.modifiedSalary,
         undesiredRoles: formData.undesiredRoles || [],
         undesiredCompanies: formData.undesiredCompanies
-          ? formData.undesiredCompanies.split(',').map((e) => e.trim())
+          ? formData.undesiredCompanies.split(",").map((e) => e.trim())
           : [],
         candidateResume: "",
         candidateResumePath: "home/ubuntu/Ajay_Resume.pdf",
@@ -671,23 +709,23 @@ const CandidateForm = () => {
         runId: "",
         splitByCountry: true,
         desiredCompanies: formData.desiredCompanies
-          ? formData.desiredCompanies.split(',').map((e) => e.trim())
+          ? formData.desiredCompanies.split(",").map((e) => e.trim())
           : [],
         desiredIndustry: formData.desiredIndustries
-          ? formData.desiredIndustries.split(',').map((e) => e.trim())
+          ? formData.desiredIndustries.split(",").map((e) => e.trim())
           : [],
         undesiredIndustry: formData.undesiredIndustries
-          ? formData.undesiredIndustries.split(',').map((e) => e.trim())
+          ? formData.undesiredIndustries.split(",").map((e) => e.trim())
           : [],
         desiredCompanySize: formData.desiredCompanySize,
         undesiredCompanySize: formData.undesiredCompanySize,
         undesiredLocations: formData.undesiredLocations
-          ? formData.undesiredLocations.split(',').map((e) => e.trim())
+          ? formData.undesiredLocations.split(",").map((e) => e.trim())
           : [],
         reportSchedules: selectedDays.map((day) => day.toUpperCase()),
       },
       distributionList: formData.distributionList
-        ? formData.distributionList.split(',').map((e) => e.trim())
+        ? formData.distributionList.split(",").map((e) => e.trim())
         : [],
     };
 
@@ -703,6 +741,7 @@ const CandidateForm = () => {
     try {
       const response = await axios.post(
         `http://3.110.181.207:8087/schedule`,
+        // `https://www.google.co.uk/`,
         formData2,
         {
           headers: {
@@ -725,7 +764,6 @@ const CandidateForm = () => {
     setFormData({ ...formData, candidateId: value });
   };
 
-
   const getDisplayValue = (apiValue) => {
     const displayMap = {
       WFH: "Work From Home (WFH)",
@@ -744,6 +782,66 @@ const CandidateForm = () => {
     return displayMap1[apiValue] || apiValue;
   };
 
+  // Function to handle checkbox toggle
+  // const handleJobCheckboxToggle = (suggestion) => {
+  //   if (selectedJobs.includes(suggestion)) {
+  //     // If the suggestion is already selected, remove it from selectedJobs
+  //     setSelectedJobs(selectedJobs.filter(job => job !== suggestion));
+  //     setFormData({ ...formData, jobTitles: selectedJobs });
+  //   } else {
+  //     // Otherwise, add the suggestion to selectedJobs
+  //     setSelectedJobs([...selectedJobs, suggestion]);
+  //   }
+  // };
+
+  // const handleJobCheckboxToggle = (suggestion) => {
+
+  //   setSelectedJobs(prev => {
+  //     // Toggle the selected suggestion in the array
+  //     const newJobTitle = prev.includes(suggestion)
+  //       ? prev.filter(loc => loc !== suggestion)  // Remove suggestion if it's already selected
+  //       : [...prev, suggestion];  // Add suggestion if it's not selected
+  //     setSearchTerm(newJobTitle);
+  //     // Update formData with the new jobTitle array
+  //     setFormData(prevData => ({
+  //       ...prevData,
+  //       jobTitles: newJobTitle.map((e) => e.trim())  // Set the jobTitles field to the trimmed values
+  //     }));
+
+  //     // Return the updated selectedJobs array
+  //     return newJobTitle;
+  //   });
+  // };
+
+  const handleJobCheckboxToggle = (suggestion) => {
+    setSelectedJobs((prev) => {
+      let updatedJobs = [...prev]; // Copy previous selected jobs
+
+      if (!suggestion) {
+        // If no suggestion, it means we are using the searchTerm
+        const newSearchTerm = searchTerm.trim();
+        if (newSearchTerm && !updatedJobs.includes(newSearchTerm)) {
+          updatedJobs.push(newSearchTerm); // Append the searchTerm to selected jobs
+        }
+        setSearchTerm(""); // Clear search term after adding it to the list
+      } else {
+        // Toggle the job suggestion
+        if (updatedJobs.includes(suggestion)) {
+          updatedJobs = updatedJobs.filter((job) => job !== suggestion); // Deselect
+        } else {
+          updatedJobs.push(suggestion); // Select
+        }
+      }
+
+      // Update formData with the selectedJobs array
+      setFormData((prevData) => ({
+        ...prevData,
+        jobTitles: updatedJobs.join(", "), // Join with comma for payload
+      }));
+
+      return updatedJobs;
+    });
+  };
 
   useEffect(() => {
     if (Array.isArray(formData.jobLocation)) {
@@ -768,7 +866,6 @@ const CandidateForm = () => {
   }, [formData.jobType]);
 
   const handleSearchClick = async () => {
-
     const userEmail = formData.candidateId;
     //console.log("User Email:", userEmail);
 
@@ -795,6 +892,8 @@ const CandidateForm = () => {
         setErrorMessage(data ? data.statusMessage : "No Records Found");
         return;
       }
+      setSelectedJobs(data.prefs.jobTitles);
+      setSearchTerm(data.prefs.jobTitles);
 
       const jobLocations = data.prefs.jobLocations || [];
       const jobTypes = data.prefs.jobTypes || [];
@@ -840,6 +939,7 @@ const CandidateForm = () => {
         undesiredLocations: data.prefs.undesiredLocations
           ? data.prefs.undesiredLocations.join(",")
           : "",
+        candidateResumeName: data.prefs.candidateResumeName,
       }));
       // console.log(formData);
 
@@ -934,6 +1034,22 @@ const CandidateForm = () => {
     }
   };
 
+  const handleSuggestionClick1 = (suggestion) => {
+    // Set the selected suggestion to the input field
+    setFormData((prevData) => ({
+      ...prevData,
+      desiredCompanySize: suggestion,
+    }));
+    setFilteredSuggestions1([]); // Hide suggestions after selection
+  };
+
+  const UnDesiredIndustriesSuggestions = [
+    "0-50",
+    "51-150",
+    "151-500",
+    "501-1000",
+  ];
+
   const handleUnDesiredCompanySizeChange = (e) => {
     const value = e.target.value;
 
@@ -945,15 +1061,25 @@ const CandidateForm = () => {
       ...prevData,
       undesiredCompanySize: formattedValue,
     }));
+
+    // Filter suggestions based on user input
+    if (formattedValue) {
+      const filtered = UnDesiredIndustriesSuggestions.filter((suggestion) =>
+        suggestion.replace(/[^0-9]/g, "").includes(formattedValue)
+      );
+      setFilteredSuggestions2(filtered);
+    } else {
+      setFilteredSuggestions2([]);
+    }
   };
 
-  const handleSuggestionClick1 = (suggestion) => {
+  const handleSuggestionClick2 = (suggestion) => {
     // Set the selected suggestion to the input field
     setFormData((prevData) => ({
       ...prevData,
-      desiredCompanySize: suggestion,
+      undesiredCompanySize: suggestion,
     }));
-    setFilteredSuggestions1([]); // Hide suggestions after selection
+    setFilteredSuggestions2([]); // Hide suggestions after selection
   };
 
   return (
@@ -986,8 +1112,9 @@ const CandidateForm = () => {
                   <label className="form-label">Candidate Name</label>
                   <input
                     type="text"
-                    className={`form-control form-input rounded-3 bold-text ${errors.candidateName ? "is-invalid" : ""
-                      }`}
+                    className={`form-control form-input rounded-3 bold-text ${
+                      errors.candidateName ? "is-invalid" : ""
+                    }`}
                     placeholder="e.g John Doe"
                     value={formData.candidateName}
                     onChange={handleCandidateNameChange}
@@ -1017,8 +1144,9 @@ const CandidateForm = () => {
 
                     <input
                       type="text"
-                      className={`form-control form-input rounded-3 bold-text ${errors.candidateEmail ? "is-invalid" : ""
-                        }`}
+                      className={`form-control form-input rounded-3 bold-text ${
+                        errors.candidateEmail ? "is-invalid" : ""
+                      }`}
                       placeholder="e.g johndoe@gmail.com"
                       value={formData.candidateId}
                       onChange={handleCandidateEmailChange}
@@ -1080,51 +1208,6 @@ const CandidateForm = () => {
               </motion.div>
 
               {/* Target Job Title */}
-              {/* <motion.div
-                className="col-md-6"
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                style={{}}
-              >
-                <div className="form-group">
-                  <label className="form-label">Target Job Title</label>
-                  <input
-                    type="text"
-                    ref={inputRef}
-                    className={`form-control form-input rounded-3 bold-text ${errors.jobTitles ? "is-invalid" : ""
-                      }`}
-                  
-                    value={searchTerm}
-                    onChange={handleJobInputChange}
-                    onKeyDown={handleKeyDown}
-                    placeholder={selectedJobs.length === 0 ? 'Search for job titles...' : 'Add another job title...'}
-                  />
-
-                  {errors.jobTitles && (
-                    <div className="invalid-feedback">{errors.jobTitles}</div>
-                  )}
-                    {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute w-full mt-1 bg-white border rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
-          {suggestions.map((suggestion, index) => (
-            <div
-              key={index}
-              className={`px-4 py-2 cursor-pointer ${
-                index === selectedIndex ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-100'
-              }`}
-              onClick={() => handleJobSuggestionClick(suggestion)}
-              onMouseEnter={() => setSelectedIndex(index)}
-            >
-              {suggestion}
-            </div>
-          ))}
-        </div>
-      )}
-                </div>
-              </motion.div> */}
-              {/* Target Job Title */}
-              {/* Target Job Title */}
-              {/* Target Job Title */}
               <motion.div
                 className="col-md-6"
                 initial={{ opacity: 0, x: -50 }}
@@ -1137,11 +1220,18 @@ const CandidateForm = () => {
                     <input
                       type="text"
                       ref={inputRef}
-                      className={`form-control form-input rounded-3 bold-text ${errors.jobTitles ? "is-invalid" : ""}`}
+                      className={`form-control form-input rounded-3 bold-text ${
+                        errors.jobTitles ? "is-invalid" : ""
+                      }`}
                       value={searchTerm}
                       onChange={handleJobInputChange}
                       onKeyDown={handleKeyDown}
-                      placeholder={selectedJobs.length === 0 ? 'Search for job titles...' : 'Add another job title...'}
+                    //  onFocus={{ setSearchTerm: "" }}
+                      placeholder={
+                        selectedJobs.length === 0
+                          ? "Search for job titles..."
+                          : "Add another job title..."
+                      }
                     />
 
                     {/* Display Error */}
@@ -1151,37 +1241,46 @@ const CandidateForm = () => {
 
                     {/* Suggestions */}
                     {showSuggestions && suggestions.length > 0 && (
-                      <div className="absolute w-full mt-1 bg-white border rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                      <ul className="suggestions-list" ref={suggestionsListRef}>
                         {suggestions.map((suggestion, index) => (
-                          <div
+                          <li
                             key={index}
-                            className={`px-4 py-2 cursor-pointer ${index === selectedIndex ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-100'}`}
-                            onClick={() => handleJobSuggestionClick(suggestion)}
+                            className="suggestion-item"
                             onMouseEnter={() => setSelectedIndex(index)}
+                            style={{
+                              zIndex: 1200,
+                              width: "230px",
+                              listStyleType: "none",
+                            }}
                           >
-                            {suggestion}
-                          </div>
+                            {/* Checkbox for each suggestion */}
+                            <input
+                              type="checkbox"
+                              checked={selectedJobs.includes(suggestion)} // Check if the job is selected
+                              onChange={() =>
+                                handleJobCheckboxToggle(suggestion)
+                              } // Handle checkbox change
+                              className="form-checkbox"
+                            />
+                            <span
+                              onClick={() =>
+                                handleJobSuggestionClick(suggestion)
+                              }
+                            >
+                              {suggestion}
+                            </span>
+                          </li>
                         ))}
+                      </ul>
+                    )}
+
+                    {/* Display the number of selected jobs */}
+                    {selectedJobs.length > 0 && (
+                      <div className="selected-jobs-info mt-2 text-sm text-gray-600">
+                        You have selected {selectedJobs.length} job
+                        {selectedJobs.length > 1 ? "s" : ""}.
                       </div>
                     )}
-                  </div>
-
-                  {/* Display Selected Jobs */}
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedJobs.map((job, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-md"
-                      >
-                        <span className="text-sm">{job}</span>
-                        <button
-                          onClick={() => removeJob(job)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                       <FaTimes size={14} />
-                        </button>
-                      </div>
-                    ))}
                   </div>
                 </div>
               </motion.div>
@@ -1196,13 +1295,15 @@ const CandidateForm = () => {
                 <div className="form-group">
                   <label className="form-label">Job Location</label>
                   <div
-                    className={`dropdown ${errors.jobLocation ? "is-invalid" : ""
-                      }`}
+                    className={`dropdown ${
+                      errors.jobLocation ? "is-invalid" : ""
+                    }`}
                     ref={locationDropdownRef}
                   >
                     <motion.button
-                      className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${errors.jobLocation ? "border-danger" : ""
-                        }`}
+                      className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${
+                        errors.jobLocation ? "border-danger" : ""
+                      }`}
                       type="button"
                       onClick={() => setIsLocationOpen((prev) => !prev)}
                       whileHover={{ scale: 1.05 }}
@@ -1211,8 +1312,8 @@ const CandidateForm = () => {
                       {selectedLocations.length === 0
                         ? "Select Job Location"
                         : selectedLocations.length === 1
-                          ? selectedLocations[0]
-                          : `${selectedLocations.length} locations selected`}
+                        ? selectedLocations[0]
+                        : `${selectedLocations.length} locations selected`}
                     </motion.button>
                     {errors.jobLocation && (
                       <div className="invalid-feedback d-block">
@@ -1220,8 +1321,9 @@ const CandidateForm = () => {
                       </div>
                     )}
                     <motion.div
-                      className={`dropdown-menu custom-dropdown-menu ${isLocationOpen ? "show" : ""
-                        }`}
+                      className={`dropdown-menu custom-dropdown-menu ${
+                        isLocationOpen ? "show" : ""
+                      }`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: isLocationOpen ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
@@ -1265,8 +1367,9 @@ const CandidateForm = () => {
                   <label className="form-label">Distribution List:</label>
                   <input
                     type="text"
-                    className={`form-control form-input rounded-3 bold-text ${errors.distributionList ? "is-invalid" : ""
-                      }`}
+                    className={`form-control form-input rounded-3 bold-text ${
+                      errors.distributionList ? "is-invalid" : ""
+                    }`}
                     placeholder="e.g. Emails to receive the results"
                     value={
                       Array.isArray(formData.distributionList)
@@ -1298,8 +1401,9 @@ const CandidateForm = () => {
                   <label className="form-label">Physical Location</label>
                   <input
                     type="text"
-                    className={`form-control form-input rounded-3 bold-text ${errors.physicalLocation ? "is-invalid" : ""
-                      }`}
+                    className={`form-control form-input rounded-3 bold-text ${
+                      errors.physicalLocation ? "is-invalid" : ""
+                    }`}
                     placeholder="e.g. New York"
                     value={formData.physicalLocation}
                     onChange={handlePhysicalLocationChange}
@@ -1323,8 +1427,9 @@ const CandidateForm = () => {
                   <label className="form-label">Minimum Salary ($)</label>
                   <motion.input
                     type="text"
-                    className={`form-control form-input rounded-3 ${errors.lowestSalary ? "is-invalid" : ""
-                      }`}
+                    className={`form-control form-input rounded-3 ${
+                      errors.lowestSalary ? "is-invalid" : ""
+                    }`}
                     placeholder="e.g $ 25000"
                     value={formData.lowestSalary}
                     onChange={handleSalaryChange}
@@ -1364,8 +1469,9 @@ const CandidateForm = () => {
                   <label className="form-label">Minimum Score</label>
                   <motion.input
                     type="text"
-                    className={`form-control form-input rounded-3 ${errors.minimumScore ? "is-invalid" : ""
-                      }`}
+                    className={`form-control form-input rounded-3 ${
+                      errors.minimumScore ? "is-invalid" : ""
+                    }`}
                     placeholder="e.g  No job below score 75%"
                     name="minimumScore"
                     value={formData.minimumScore}
@@ -1395,8 +1501,9 @@ const CandidateForm = () => {
                     ref={jobTypedropdownRef}
                   >
                     <motion.button
-                      className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${errors.jobType ? "border-danger" : ""
-                        }`}
+                      className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${
+                        errors.jobType ? "border-danger" : ""
+                      }`}
                       type="button"
                       onClick={() => setIsJobTypeOpen((prev) => !prev)}
                       whileHover={{ scale: 1.05 }}
@@ -1405,8 +1512,8 @@ const CandidateForm = () => {
                       {selectedJobTypes.length === 0
                         ? "Select Job Type"
                         : selectedJobTypes.length === 1
-                          ? selectedJobTypes[0]
-                          : `${selectedJobTypes.length} types selected`}
+                        ? selectedJobTypes[0]
+                        : `${selectedJobTypes.length} types selected`}
                     </motion.button>
                     {errors.jobType && (
                       <div className="invalid-feedback d-block">
@@ -1414,8 +1521,9 @@ const CandidateForm = () => {
                       </div>
                     )}
                     <motion.div
-                      className={`dropdown-menu custom-dropdown-menu ${isJobTypeOpen ? "show" : ""
-                        }`}
+                      className={`dropdown-menu custom-dropdown-menu ${
+                        isJobTypeOpen ? "show" : ""
+                      }`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: isJobTypeOpen ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
@@ -1456,13 +1564,15 @@ const CandidateForm = () => {
                 <div className="form-group">
                   <label className="form-label">Report Schedule</label>
                   <div
-                    className={`dropdown ${errors.reportSchedule ? "is-invalid" : ""
-                      }`}
+                    className={`dropdown ${
+                      errors.reportSchedule ? "is-invalid" : ""
+                    }`}
                     ref={dropdownRef}
                   >
                     <motion.button
-                      className={`btn custom-dropdown-button dropdown-toggle w-100 ${errors.reportSchedule ? "border-danger" : ""
-                        }`}
+                      className={`btn custom-dropdown-button dropdown-toggle w-100 ${
+                        errors.reportSchedule ? "border-danger" : ""
+                      }`}
                       type="button"
                       onClick={() => setIsOpen(!isOpen)}
                       whileHover={{ scale: 1.05 }}
@@ -1476,8 +1586,9 @@ const CandidateForm = () => {
                       </div>
                     )}
                     <motion.div
-                      className={`dropdown-menu custom-dropdown-menu ${isOpen ? "show" : ""
-                        }`}
+                      className={`dropdown-menu custom-dropdown-menu ${
+                        isOpen ? "show" : ""
+                      }`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: isOpen ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
@@ -1529,8 +1640,9 @@ const CandidateForm = () => {
                     <label className="form-label">Desired Companies</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${errors.desiredCompanies ? "is-invalid" : ""
-                        }`}
+                      className={`form-control form-input rounded-3 ${
+                        errors.desiredCompanies ? "is-invalid" : ""
+                      }`}
                       placeholder="e.g Microsoft"
                       pattern="^[a-zA-Z0-9\s]+$"
                       value={formData.desiredCompanies}
@@ -1560,8 +1672,9 @@ const CandidateForm = () => {
                     <label className="form-label">Desired Industries</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${errors.desiredIndustries ? "is-invalid" : ""
-                        }`}
+                      className={`form-control form-input rounded-3 ${
+                        errors.desiredIndustries ? "is-invalid" : ""
+                      }`}
                       placeholder="e.g IT"
                       pattern="^[a-zA-Z0-9\s]+$"
                       value={formData.desiredIndustries}
@@ -1594,9 +1707,10 @@ const CandidateForm = () => {
                     <label className="form-label">Desired Company Size</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${errors.desiredCompanySize ? "is-invalid" : ""
-                        }`}
-                      placeholder="e.g 0-51"
+                      className={`form-control form-input rounded-3 ${
+                        errors.desiredCompanySize ? "is-invalid" : ""
+                      }`}
+                      placeholder="e.g 0-50"
                       value={formData.desiredCompanySize}
                       onChange={handleDesiredCompanySizeChange}
                     />
@@ -1633,8 +1747,9 @@ const CandidateForm = () => {
                     <label className="form-label">Desired Location</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${errors.desiredLocation ? "is-invalid" : ""
-                        }`}
+                      className={`form-control form-input rounded-3 ${
+                        errors.desiredLocation ? "is-invalid" : ""
+                      }`}
                       placeholder="e.g London"
                       pattern="^[a-zA-Z0-9\s]+$"
                       value={formData.desiredLocation}
@@ -1669,8 +1784,9 @@ const CandidateForm = () => {
                     <label className="form-label">Undesired Companies</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${errors.undesiredCompanies ? "is-invalid" : ""
-                        }`}
+                      className={`form-control form-input rounded-3 ${
+                        errors.undesiredCompanies ? "is-invalid" : ""
+                      }`}
                       placeholder="e.g Deloitte Consulting"
                       pattern="^[a-zA-Z0-9\s]+$"
                       value={formData.undesiredCompanies}
@@ -1709,8 +1825,9 @@ const CandidateForm = () => {
                     <label className="form-label">Undesired Industries</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${errors.undesiredIndustries ? "is-invalid" : ""
-                        }`}
+                      className={`form-control form-input rounded-3 ${
+                        errors.undesiredIndustries ? "is-invalid" : ""
+                      }`}
                       placeholder="e.g Finance"
                       pattern="^[a-zA-Z0-9\s]+$"
                       value={formData.undesiredIndustries}
@@ -1749,51 +1866,28 @@ const CandidateForm = () => {
                     <label className="form-label">Undesired Company Size</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${errors.undesiredCompanySize ? "is-invalid" : ""}`}
+                      className={`form-control form-input rounded-3 ${
+                        errors.undesiredCompanySize ? "is-invalid" : ""
+                      }`}
                       placeholder="e.g 0-50"
                       value={formData.undesiredCompanySize}
-                      onFocus={() => {
-                        setSuggestedValues(suggestions);
-                      }}
-                      onBlur={() => setSuggestedValues([])}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        // Only allow digits to be entered
-                        //  const newValue = value.replace(/\D/g, ""); // Remove any non-digit characters
-                        const newValue = value.replace(/[^0-9+-]/g, "");
-                        setFormData({
-                          ...formData,
-                          undesiredCompanySize: newValue,
-                        });
-                      }}
+                      onChange={handleUnDesiredCompanySizeChange}
                     />
-                    {errors.undesiredCompanySize && (
-                      <div className="invalid-feedback d-block">
-                        {errors.undesiredCompanySize}
-                      </div>
-                    )}
-                    {suggestedValues.length > 0 && (
-                      <div className="suggestions-list">
-                        {suggestedValues.map((suggestion, index) => (
-                          <div
+                    {filteredSuggestions2.length > 0 && (
+                      <ul className="suggestions-list ">
+                        {filteredSuggestions2.map((suggestion, index) => (
+                          <li
                             key={index}
-                            className="suggestion-item"
-                            onClick={() => {
-                              setFormData({
-                                ...formData,
-                                undesiredCompanySize: suggestion,
-                              });
-                              setSuggestedValues([]);
-                            }}
+                            onClick={() => handleSuggestionClick2(suggestion)}
+                            className="suggestion-item "
                           >
                             {suggestion}
-                          </div>
+                          </li>
                         ))}
-                      </div>
+                      </ul>
                     )}
                   </div>
                 </motion.div>
-
 
                 {/* Undesired Location */}
                 <motion.div
@@ -1806,8 +1900,9 @@ const CandidateForm = () => {
                     <label className="form-label">Undesired Location</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${errors.undesiredLocation ? "is-invalid" : ""
-                        }`}
+                      className={`form-control form-input rounded-3 ${
+                        errors.undesiredLocation ? "is-invalid" : ""
+                      }`}
                       placeholder="e.g New York"
                       pattern="^[a-zA-Z0-9\s]+$"
                       value={formData.undesiredLocations}
@@ -1853,12 +1948,13 @@ const CandidateForm = () => {
                   <input
                     id="resume"
                     type="file"
-                    className={`file-input ${errors.resume ? "is-invalid" : ""
-                      }`}
+                    className={`file-input ${
+                      errors.resume ? "is-invalid" : ""
+                    }`}
                     name="resume"
                     style={{ display: "none" }} // Hide the file input
                     onChange={handleFileChange}
-                  // Handle file selection
+                    // Handle file selection
                   />
 
                   <img
@@ -1869,19 +1965,10 @@ const CandidateForm = () => {
                   <span style={{ fontWeight: "bold" }}>Upload Resume</span>
                 </label>
               </button>
-
-              {fileName && !uploading && (
-                <div
-                  style={{
-                    marginTop: "10px",
-                    fontWeight: "bold",
-                    color: "#333",
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  <p>{fileName}</p>
-                </div>
+              {formData.candidateResumeName && (
+                <center>
+                  <h6 className="resumeName">{formData.candidateResumeName}*</h6>
+                </center>
               )}
 
               {uploading && (
@@ -1896,7 +1983,7 @@ const CandidateForm = () => {
                   }}
                 >
                   <div style={{ width: "80%", flexGrow: 1 }}>
-                    <p>{fileName}</p>
+                    {/* <p>{fileName}</p> */}
                     <div
                       style={{
                         width: "100%",
@@ -1932,7 +2019,7 @@ const CandidateForm = () => {
                         display: "flex",
                         justifyContent: "center",
                         alignItems: "center",
-                        marginTop: "33px",
+                      
                       }}
                     >
                       &#10005; {/* Cross icon (X) */}
