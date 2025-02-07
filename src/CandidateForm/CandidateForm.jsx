@@ -83,59 +83,56 @@ const CandidateForm = () => {
     };
   };
 
- 
-const fetchJobSuggestions = async (query) => {
-  if (!query) return; // Handle empty query input
-  
-  const lowercaseQuery = query.toLowerCase();
-  
-  // Check if results are already cached (in useState)
-  if (cachedResults[lowercaseQuery]) {
-    setSuggestions(cachedResults[lowercaseQuery]);
-    return;
-  }
-
-  setLoading(true);
-  try {
-    const response = await fetch(`http://3.110.181.207:8087/getSuggestions/${query}`, {
-      method: "GET",
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch job suggestions: ${response.statusText}`);
+  const fetchJobSuggestions = async (query) => {
+    if (!query) return; // Handle empty query input
+    const lowercaseQuery = query.toLowerCase();
+    // Check if results are already cached (in useState)
+    if (cachedResults[lowercaseQuery]) {
+      setSuggestions(cachedResults[lowercaseQuery]);
+      return;
     }
+    setLoading(true);
+    try {
+      const response = await fetch(`http://3.110.181.207:8087/getSuggestions/${query}`, {
+        method: "GET",
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch job suggestions: ${response.statusText}`);
+      }
+      const data = await response.json();
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid response format: data is not an array");
+      }
+      // Filter out already selected jobs from suggestions and remove duplicates
+      const jobTitles = [...new Set(data
+        .filter((title) => !selectedJobs.includes(title)) // Exclude selected jobs
+      )].slice(0, 10); // Limit to 10 suggestions
 
-    const data = await response.json();
+      setSuggestions(jobTitles);
 
-    if (!Array.isArray(data)) {
-      throw new Error("Invalid response format: data is not an array");
+      // Cache the results in useState
+      setCachedResults((prev) => ({ ...prev, [lowercaseQuery]: jobTitles }));
+    } catch (error) {
+      console.error("Error fetching job suggestions:", error);
+      setSuggestions([]);
+    } finally {
+      setLoading(false);
     }
-
-    // Filter out already selected jobs from suggestions and remove duplicates
-    const jobTitles = [...new Set(data
-      .filter((title) => !selectedJobs.includes(title)) // Exclude selected jobs
-    )].slice(0, 10); // Limit to 10 suggestions
-
-    setSuggestions(jobTitles);
-
-    // Cache the results in useState
-    setCachedResults((prev) => ({ ...prev, [lowercaseQuery]: jobTitles }));
-  } catch (error) {
-    console.error("Error fetching job suggestions:", error);
-    setSuggestions([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
   // Debounced version of fetchJobSuggestions
   const debouncedFetch = debounce(fetchJobSuggestions, 200);
 
   const getJobTitlesForPayload = () => {
     // Step 1: Split searchTerm into separate job titles if there's any comma (assuming user enters comma-separated values)
-    const searchTermTitles = searchTerm.split(',')
-      .map((title) => title.trim())
-      .filter(Boolean);
+    // const searchTermTitles = searchTerm.split(',')
+    //   .map((title) => title.trim())
+    //   .filter(Boolean);
+    if (!searchTerm) {
+      console.error("Invalid searchTerm:", searchTerm);
+      return []; // Return empty array to prevent undefined errors
+    }
+  
+    const searchTermTitles = searchTerm.split(",");
 
     // Step 2: Combine the selected jobs and the searchTerm titles
     let allJobTitles = [...selectedJobs, ...searchTermTitles];
@@ -145,29 +142,46 @@ const fetchJobSuggestions = async (query) => {
 
     return allJobTitles;
   };
-  const handleJobInputChange = (e) => {
-    const value = e.target.value;
-   // console.log("value", value);
-   
-    setSearchTerm(value);
-    setShowSuggestions(true);
-
-    const terms = value.split(",").map((term) => term.trim());
-    const lastTerm = terms[terms.length - 1];
-
-    // If the last term is at least 4 characters long, fetch suggestions
-    if (lastTerm.length === 3 || lastTerm.length === 6) {
-      debouncedFetch(lastTerm); // Call the API for the last term
-      setShowSuggestions(true);
-    } else if (lastTerm.length < 4) {
-      setSuggestions([]); // Hide suggestions if the term is less than 4 characters
-      setShowSuggestions(false);
-    } else {
-      setSuggestions(cachedResults[lastTerm] || []); // Use cache if the last term is already fetched
+  useEffect(() => {
+    if (selectedJobs.length > 0) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        jobTitles: "", // Clear validation error
+      }));
     }
-
+  }, [selectedJobs]); // Runs whenever selectedJobs changes
+  
+  const handleJobInputChange = (e) => {
+    const value = e.target.value.trim(); // Remove unnecessary spaces
+  
+    //  Clear validation error while typing
+    if (errors.jobTitles) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        jobTitles: "",
+      }));
+    }
+  
+    setSearchTerm(value); //  Ensure search term updates
+  
+    const terms = value.split(",").map((term) => term.trim());
+    const lastTerm = terms[terms.length - 1]; // Get last entered term
+  
+    // Ensure API call happens correctly
+    if (lastTerm.length >= 3) {
+      debouncedFetch(lastTerm); // 🔥 Call API for job suggestions
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]); // Hide suggestions if term is too short
+      setShowSuggestions(false);
+    }
+  
     setSelectedIndex(-1);
   };
+  
+  
+  
+  
 
   const handleJobSuggestionClick = (suggestion) => {
     if (!selectedJobs.includes(suggestion)) {
@@ -278,7 +292,12 @@ const fetchJobSuggestions = async (query) => {
       setFile(selectedFile);
       setUploading(true); // Start the upload state
       simulateUploadProgress(); // Simulate upload progress
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        resume: "",
+      }));
     }
+   
   };
 
   // Simulate the file upload progress
@@ -319,18 +338,7 @@ const fetchJobSuggestions = async (query) => {
     "PART TIME": "PART TIME",
     CONTRACT: "CONTRACT",
     INTERNSHIP: "INTERNSHIP",
-    // displayToApi: {
-    //   "Full Time": "FULL",
-    //   "Part Time": "PART",
-    //   Contract: "CONTRACT",
-    //   Internship: "INTERNSHIP",
-    // },
-    // apiToDisplay: {
-    //   FULL: "Full Time",
-    //   PART: "Part Time",
-    //   CONTRACT: "Contract",
-    //   INTERNSHIP: "Internship",
-    // },
+   
   };
 
   const valueDayMap = {
@@ -413,6 +421,7 @@ const fetchJobSuggestions = async (query) => {
   };
 
   const handleLocationToggle = (location) => {
+  
     setSelectedLocations((prev) => {
       const newLocations = prev.includes(location)
         ? prev.filter((loc) => loc !== location)
@@ -478,9 +487,8 @@ const fetchJobSuggestions = async (query) => {
   const getButtonText = () => {
     if (selectedDays.length === 0) return "Select Day Of The Week";
     if (selectedDays.length === days.length) return "All Days Selected";
-    return `${selectedDays.length} Day${
-      selectedDays.length > 1 ? "s" : ""
-    } Selected`;
+    return `${selectedDays.length} Day${selectedDays.length > 1 ? "s" : ""
+      } Selected`;
   };
   const validate = () => {
     const newErrors = {
@@ -504,11 +512,15 @@ const fetchJobSuggestions = async (query) => {
       candidateEmail: "",
     };
 
-    // Validation rule: jobTitles should not be empty and should contain at least one job title
-    if (!formData.jobTitles || formData.jobTitles.length === 0) {
+    // // Validation rule: jobTitles should not be empty and should contain at least one job title
+    // if (!formData.jobTitles || formData.jobTitles.length === 0) {
+    //   newErrors.jobTitles = "Please enter at least one job title.";
+    // }
+
+    if (selectedJobs.length === 0 && searchTerm.trim() === "") {
       newErrors.jobTitles = "Please enter at least one job title.";
     }
-
+    
     if (!formData.distributionList || formData.distributionList.length === 0) {
       newErrors.distributionList = "Distribution List is required";
     } else {
@@ -597,15 +609,40 @@ const fetchJobSuggestions = async (query) => {
     setErrors(newErrors);
     return Object.values(newErrors).every((error) => error === "");
   };
-
-  const handleFormSubmit = async (event) => {
-    event.preventDefault();
-    const validationErrors = validate();
-
-    if (validationErrors) {
-      setPopupVisible(true);
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+  
+    let updatedSelectedJobs = [...selectedJobs];
+  
+    // ✅ If user typed a job title but didn't select it, add it to selectedJobs
+    if (searchTerm.trim() !== "" && !updatedSelectedJobs.includes(searchTerm.trim())) {
+      updatedSelectedJobs.push(searchTerm.trim());
     }
+  
+    // ✅ Set the updated selected jobs
+    setSelectedJobs(updatedSelectedJobs);
+  
+    // ✅ Validation
+    if (updatedSelectedJobs.length === 0) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        jobTitles: "Please enter at least one job title.",
+      }));
+      return; // ❌ Stop submission if there's an error
+    }
+  
+    // ✅ Clear the validation error if jobTitles is valid
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      jobTitles: "",
+    }));
+  
+    // 🚀 Proceed with form submission logic
+    console.log("Submitting with selected jobs:", updatedSelectedJobs);
   };
+  
+  
+  
   const handleJobTitleChange = (e) => {
     const value = e.target.value;
 
@@ -616,6 +653,16 @@ const fetchJobSuggestions = async (query) => {
     const value = e.target.value;
     setInput(value);
     setFormData({ ...formData, distributionList: value });
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;  
+  
+    // If there's an error and the email is valid, remove the validation message
+    if (errors.distributionList && emailRegex.test(value)) {  
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        distributionList: "",  // ✅ Clears the error message if the email is valid
+      }));
+    }
   };
 
   const handlePhysicalLocationChange = (e) => {
@@ -624,15 +671,27 @@ const fetchJobSuggestions = async (query) => {
     if (regex.test(value)) {
       setFormData({ ...formData, physicalLocation: value });
     }
+    if(errors.physicalLocation){
+      setErrors((preErrors)=>({
+        ...preErrors,
+        physicalLocation:"",
+      }))
+    }
   };
 
   const handleCandidateNameChange = (e) => {
     const value = e.target.value;
 
-    const regex = /^[a-zA-Z\s]*$/;
+    const regex = /^[a-zA-Z\s.]*$/;
 
     if (regex.test(value)) {
       setFormData({ ...formData, candidateName: value });
+    }
+    if (errors.candidateName) {  
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        candidateName: "",  // 🔹 Clears the error message dynamically
+      }));
     }
   };
 
@@ -752,7 +811,19 @@ const fetchJobSuggestions = async (query) => {
   const handleCandidateEmailChange = (e) => {
     const value = e.target.value;
     setFormData({ ...formData, candidateId: value });
+  
+    // Define Email Regex Pattern
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;  
+  
+    // If there's an error and the email is valid, remove the validation message
+    if (errors.candidateEmail && emailRegex.test(value)) {  
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        candidateEmail: "",  // ✅ Clears the error message if the email is valid
+      }));
+    }
   };
+  
 
   const getDisplayValue = (apiValue) => {
     const displayMap = {
@@ -927,6 +998,13 @@ const fetchJobSuggestions = async (query) => {
   const handleSalaryChange = (e) => {
     const value = e.target.value;
 
+    
+    if(errors.lowestSalary){
+      setErrors({...errors, lowestSalary: ""})
+    }
+   
+   
+    
     // Remove any non-numeric characters (except for periods)
     const formattedValue = value.replace(/[^0-9.]/g, "");
 
@@ -952,6 +1030,9 @@ const fetchJobSuggestions = async (query) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    if(errors.minimumScore){
+      setErrors({...errors, minimumScore: ""})
+    }
   };
   const DesiredIndustriesSuggestions = [
     "0-50",
@@ -1060,9 +1141,8 @@ const fetchJobSuggestions = async (query) => {
                   <label className="form-label">Candidate Name</label>
                   <input
                     type="text"
-                    className={`form-control form-input rounded-3 bold-text ${
-                      errors.candidateName ? "is-invalid" : ""
-                    }`}
+                    className={`form-control form-input rounded-3 bold-text ${errors.candidateName ? "is-invalid" : ""
+                      }`}
                     placeholder="e.g John Doe"
                     value={formData.candidateName}
                     onChange={handleCandidateNameChange}
@@ -1092,9 +1172,8 @@ const fetchJobSuggestions = async (query) => {
 
                     <input
                       type="text"
-                      className={`form-control form-input rounded-3 bold-text ${
-                        errors.candidateEmail ? "is-invalid" : ""
-                      }`}
+                      className={`form-control form-input rounded-3 bold-text ${errors.candidateEmail ? "is-invalid" : ""
+                        }`}
                       placeholder="e.g johndoe@gmail.com"
                       value={formData.candidateId}
                       onChange={handleCandidateEmailChange}
@@ -1108,20 +1187,22 @@ const fetchJobSuggestions = async (query) => {
                     )}
                   </div>
 
-                  {/* Icon positioned inside the input field */}
-                  <FaSearch
-                    style={{
-                      position: "absolute",
-                      right: "20px",
-                      top: "60%",
-                      zIndex: "1200",
-                      color: "grey",
-                      cursor: "pointer",
-                    }}
-                    size={25}
-                    title="search"
-                    onClick={handleSearchClick}
-                  />
+                  {/* Conditionally render the search icon based on validation errors */}
+                  {!errors.candidateEmail && (
+                    <FaSearch
+                      style={{
+                        position: "absolute",
+                        right: "20px",
+                        top: "60%",
+                        zIndex: "1",
+                        color: "grey",
+                        cursor: "pointer",
+                      }}
+                      size={20}
+                      title="search"
+                      onClick={handleSearchClick}
+                    />
+                  )}
 
                   {errorMessage && (
                     <div className="popup">
@@ -1157,78 +1238,77 @@ const fetchJobSuggestions = async (query) => {
 
               {/* Target Job Title */}
               <motion.div
-  className="col-md-6"
-  initial={{ opacity: 0, x: -50 }}
-  animate={{ opacity: 1, x: 0 }}
-  transition={{ duration: 0.6, delay: 0.2 }}
->
-  <div className="form-group">
-    <label className="form-label">Target Job Title</label>
-    <div className="relative">
-      <input
-        type="text"
-        ref={inputRef}
-        className={`form-control form-input rounded-3 bold-text ${
-          errors.jobTitles ? "is-invalid" : ""
-        }`}
-        value={searchTerm}
-        onChange={handleJobInputChange}
-        onKeyDown={handleKeyDown}
-        placeholder={
-          selectedJobs.length === 0
-            ? "Search for job titles..."
-            : "Add another job title..."
-        }
-      />
+                className="col-md-6"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <div className="form-group">
+                  <label className="form-label">Target Job Title</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      ref={inputRef}
+                      className={`form-control form-input rounded-3 bold-text ${errors.jobTitles ? "is-invalid" : ""
+                        }`}
+                      value={searchTerm}
+                      onChange={handleJobInputChange}
+                      onKeyDown={handleKeyDown}
+                      placeholder={
+                        selectedJobs.length === 0
+                          ? "Search for job titles..."
+                          : "Add another job title..."
+                      }
+                    />
 
-      {/* Display Error */}
-      {errors.jobTitles && (
-        <div className="invalid-feedback">{errors.jobTitles}</div>
-      )}
-
-      {/* Suggestions */}
-     {/* Suggestions */}
-{showSuggestions && suggestions.length > 0 && (
-  <ul className="suggestions-list" ref={suggestionsListRef}>
-    {suggestions.map((suggestion, index) => (
-      <li
-        key={index}
-        className="suggestion-item"
-        onMouseEnter={() => setSelectedIndex(index)}
-        style={{
-          zIndex: 1200,
-          width: "230px",
-          listStyleType: "none",
-        }}
-      >
-        {/* Checkbox for each suggestion */}
-        <input
-          type="checkbox"
-          checked={selectedJobs.includes(suggestion)} // Ensure checkbox is checked if job is in selectedJobs
-          onChange={() => handleJobCheckboxToggle(suggestion)} // Handle checkbox toggle
-          className="form-checkbox"
-        />
-        <span
-          onClick={() => handleJobSuggestionClick(suggestion)}
-        >
-          {suggestion}
-        </span>
-      </li>
-    ))}
-  </ul>
-)}
+                    {/* Display Error */}
+                    {errors.jobTitles && (
+                      <div className="invalid-feedback">{errors.jobTitles}</div>
+                    )}
 
 
-      {/* Display the number of selected jobs */}
-      {selectedJobs.length > 0 && (
-        <div className="selected-jobs-info mt-2 text-sm text-gray-600">
-          You have selected {selectedJobs.length} job
-          {selectedJobs.length > 1 ? "s" : ""}.
-        </div>
-      )}
-    </div>
-  </div>
-</motion.div>
+                    {/* Suggestions */}
+                    {showSuggestions && suggestions.length > 0 && (
+                      <ul className="suggestions-list" ref={suggestionsListRef}>
+                        {suggestions.map((suggestion, index) => (
+                          <li
+                            key={index}
+                            className="suggestion-item"
+                            onMouseEnter={() => setSelectedIndex(index)}
+                            style={{
+                              zIndex: 1200,
+                              width: "230px",
+                              listStyleType: "none",
+                            }}
+                          >
+                            {/* Checkbox for each suggestion */}
+                            <input
+                              type="checkbox"
+                              checked={selectedJobs.includes(suggestion)} // Ensure checkbox is checked if job is in selectedJobs
+                              onChange={() => handleJobCheckboxToggle(suggestion)} // Handle checkbox toggle
+                              className="form-checkbox"
+                            />
+                            <span
+                              onClick={() => handleJobSuggestionClick(suggestion)}
+                            >
+                              {suggestion}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+
+                    {/* Display the number of selected jobs */}
+                    {selectedJobs.length > 0 && (
+                      <div className="selected-jobs-info mt-2 text-sm text-gray-600">
+                        You have selected {selectedJobs.length} job
+                        {selectedJobs.length > 1 ? "s" : ""}.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
 
 
               {/* Job Location */}
@@ -1241,25 +1321,34 @@ const fetchJobSuggestions = async (query) => {
                 <div className="form-group">
                   <label className="form-label">Job Location</label>
                   <div
-                    className={`dropdown ${
-                      errors.jobLocation ? "is-invalid" : ""
-                    }`}
+                    className={`dropdown ${errors.jobLocation ? "is-invalid" : ""
+                      }`}
                     ref={locationDropdownRef}
                   >
                     <motion.button
-                      className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${
-                        errors.jobLocation ? "border-danger" : ""
-                      }`}
+                      className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${errors.jobLocation ? "border-danger" : ""
+                        }`}
                       type="button"
-                      onClick={() => setIsLocationOpen((prev) => !prev)}
+                      onClick={() => {
+                        setIsLocationOpen((prev) => !prev);
+                        
+                        // 🔹 Remove validation error when clicking the dropdown button
+                        if (errors.jobLocation) {
+                          setErrors((prevErrors) => ({
+                            ...prevErrors,
+                            jobLocation: "",
+                          }));
+                        }
+                      }}
+                     
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
                     >
                       {selectedLocations.length === 0
                         ? "Select Job Location"
                         : selectedLocations.length === 1
-                        ? selectedLocations[0]
-                        : `${selectedLocations.length} locations selected`}
+                          ? selectedLocations[0]
+                          : `${selectedLocations.length} locations selected`}
                     </motion.button>
                     {errors.jobLocation && (
                       <div className="invalid-feedback d-block">
@@ -1267,9 +1356,8 @@ const fetchJobSuggestions = async (query) => {
                       </div>
                     )}
                     <motion.div
-                      className={`dropdown-menu custom-dropdown-menu ${
-                        isLocationOpen ? "show" : ""
-                      }`}
+                      className={`dropdown-menu custom-dropdown-menu ${isLocationOpen ? "show" : ""
+                        }`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: isLocationOpen ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
@@ -1313,9 +1401,8 @@ const fetchJobSuggestions = async (query) => {
                   <label className="form-label">Distribution List:</label>
                   <input
                     type="text"
-                    className={`form-control form-input rounded-3 bold-text ${
-                      errors.distributionList ? "is-invalid" : ""
-                    }`}
+                    className={`form-control form-input rounded-3 bold-text ${errors.distributionList ? "is-invalid" : ""
+                      }`}
                     placeholder="e.g. Emails to receive the results"
                     value={
                       Array.isArray(formData.distributionList)
@@ -1347,9 +1434,8 @@ const fetchJobSuggestions = async (query) => {
                   <label className="form-label">Physical Location</label>
                   <input
                     type="text"
-                    className={`form-control form-input rounded-3 bold-text ${
-                      errors.physicalLocation ? "is-invalid" : ""
-                    }`}
+                    className={`form-control form-input rounded-3 bold-text ${errors.physicalLocation ? "is-invalid" : ""
+                      }`}
                     placeholder="e.g. New York"
                     value={formData.physicalLocation}
                     onChange={handlePhysicalLocationChange}
@@ -1373,9 +1459,8 @@ const fetchJobSuggestions = async (query) => {
                   <label className="form-label">Minimum Salary ($)</label>
                   <motion.input
                     type="text"
-                    className={`form-control form-input rounded-3 ${
-                      errors.lowestSalary ? "is-invalid" : ""
-                    }`}
+                    className={`form-control form-input rounded-3 ${errors.lowestSalary ? "is-invalid" : ""
+                      }`}
                     placeholder="e.g $ 25000"
                     value={formData.lowestSalary}
                     onChange={handleSalaryChange}
@@ -1415,9 +1500,8 @@ const fetchJobSuggestions = async (query) => {
                   <label className="form-label">Minimum Score</label>
                   <motion.input
                     type="text"
-                    className={`form-control form-input rounded-3 ${
-                      errors.minimumScore ? "is-invalid" : ""
-                    }`}
+                    className={`form-control form-input rounded-3 ${errors.minimumScore ? "is-invalid" : ""
+                      }`}
                     placeholder="e.g  No job below score 75%"
                     name="minimumScore"
                     value={formData.minimumScore}
@@ -1447,19 +1531,26 @@ const fetchJobSuggestions = async (query) => {
                     ref={jobTypedropdownRef}
                   >
                     <motion.button
-                      className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${
-                        errors.jobType ? "border-danger" : ""
-                      }`}
+                      className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${errors.jobType ? "border-danger" : ""
+                        }`}
                       type="button"
-                      onClick={() => setIsJobTypeOpen((prev) => !prev)}
+                      onClick={() =>{
+                        setIsJobTypeOpen((prev) => !prev);
+                        if(errors.jobType){
+                          setErrors((preErrors)=>({
+                            ...preErrors,
+                            jobType:""
+                          }))
+                        }
+                      } }
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
                     >
                       {selectedJobTypes.length === 0
                         ? "Select Job Type"
                         : selectedJobTypes.length === 1
-                        ? selectedJobTypes[0]
-                        : `${selectedJobTypes.length} types selected`}
+                          ? selectedJobTypes[0]
+                          : `${selectedJobTypes.length} types selected`}
                     </motion.button>
                     {errors.jobType && (
                       <div className="invalid-feedback d-block">
@@ -1467,9 +1558,8 @@ const fetchJobSuggestions = async (query) => {
                       </div>
                     )}
                     <motion.div
-                      className={`dropdown-menu custom-dropdown-menu ${
-                        isJobTypeOpen ? "show" : ""
-                      }`}
+                      className={`dropdown-menu custom-dropdown-menu ${isJobTypeOpen ? "show" : ""
+                        }`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: isJobTypeOpen ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
@@ -1510,17 +1600,23 @@ const fetchJobSuggestions = async (query) => {
                 <div className="form-group">
                   <label className="form-label">Report Schedule</label>
                   <div
-                    className={`dropdown ${
-                      errors.reportSchedule ? "is-invalid" : ""
-                    }`}
+                    className={`dropdown ${errors.reportSchedule ? "is-invalid" : ""
+                      }`}
                     ref={dropdownRef}
                   >
                     <motion.button
-                      className={`btn custom-dropdown-button dropdown-toggle w-100 ${
-                        errors.reportSchedule ? "border-danger" : ""
-                      }`}
+                      className={`btn custom-dropdown-button dropdown-toggle w-100 ${errors.reportSchedule ? "border-danger" : ""
+                        }`}
                       type="button"
-                      onClick={() => setIsOpen(!isOpen)}
+                      onClick={() => {setIsOpen(!isOpen);
+                        if(errors.reportSchedule){
+                          setErrors((preErrors)=>({
+                            ...preErrors,
+                            reportSchedule:""
+                          }))
+                        }
+
+                      }}
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
                     >
@@ -1532,9 +1628,8 @@ const fetchJobSuggestions = async (query) => {
                       </div>
                     )}
                     <motion.div
-                      className={`dropdown-menu custom-dropdown-menu ${
-                        isOpen ? "show" : ""
-                      }`}
+                      className={`dropdown-menu custom-dropdown-menu ${isOpen ? "show" : ""
+                        }`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: isOpen ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
@@ -1586,9 +1681,8 @@ const fetchJobSuggestions = async (query) => {
                     <label className="form-label">Desired Companies</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${
-                        errors.desiredCompanies ? "is-invalid" : ""
-                      }`}
+                      className={`form-control form-input rounded-3 ${errors.desiredCompanies ? "is-invalid" : ""
+                        }`}
                       placeholder="e.g Microsoft"
                       pattern="^[a-zA-Z0-9\s]+$"
                       value={formData.desiredCompanies}
@@ -1618,9 +1712,8 @@ const fetchJobSuggestions = async (query) => {
                     <label className="form-label">Desired Industries</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${
-                        errors.desiredIndustries ? "is-invalid" : ""
-                      }`}
+                      className={`form-control form-input rounded-3 ${errors.desiredIndustries ? "is-invalid" : ""
+                        }`}
                       placeholder="e.g IT"
                       pattern="^[a-zA-Z0-9\s]+$"
                       value={formData.desiredIndustries}
@@ -1653,9 +1746,8 @@ const fetchJobSuggestions = async (query) => {
                     <label className="form-label">Desired Company Size</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${
-                        errors.desiredCompanySize ? "is-invalid" : ""
-                      }`}
+                      className={`form-control form-input rounded-3 ${errors.desiredCompanySize ? "is-invalid" : ""
+                        }`}
                       placeholder="e.g 0-50"
                       value={formData.desiredCompanySize}
                       onChange={handleDesiredCompanySizeChange}
@@ -1693,9 +1785,8 @@ const fetchJobSuggestions = async (query) => {
                     <label className="form-label">Desired Location</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${
-                        errors.desiredLocation ? "is-invalid" : ""
-                      }`}
+                      className={`form-control form-input rounded-3 ${errors.desiredLocation ? "is-invalid" : ""
+                        }`}
                       placeholder="e.g London"
                       pattern="^[a-zA-Z0-9\s]+$"
                       value={formData.desiredLocation}
@@ -1730,9 +1821,8 @@ const fetchJobSuggestions = async (query) => {
                     <label className="form-label">Undesired Companies</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${
-                        errors.undesiredCompanies ? "is-invalid" : ""
-                      }`}
+                      className={`form-control form-input rounded-3 ${errors.undesiredCompanies ? "is-invalid" : ""
+                        }`}
                       placeholder="e.g Deloitte Consulting"
                       pattern="^[a-zA-Z0-9\s]+$"
                       value={formData.undesiredCompanies}
@@ -1771,9 +1861,8 @@ const fetchJobSuggestions = async (query) => {
                     <label className="form-label">Undesired Industries</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${
-                        errors.undesiredIndustries ? "is-invalid" : ""
-                      }`}
+                      className={`form-control form-input rounded-3 ${errors.undesiredIndustries ? "is-invalid" : ""
+                        }`}
                       placeholder="e.g Finance"
                       pattern="^[a-zA-Z0-9\s]+$"
                       value={formData.undesiredIndustries}
@@ -1812,9 +1901,8 @@ const fetchJobSuggestions = async (query) => {
                     <label className="form-label">Undesired Company Size</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${
-                        errors.undesiredCompanySize ? "is-invalid" : ""
-                      }`}
+                      className={`form-control form-input rounded-3 ${errors.undesiredCompanySize ? "is-invalid" : ""
+                        }`}
                       placeholder="e.g 0-50"
                       value={formData.undesiredCompanySize}
                       onChange={handleUnDesiredCompanySizeChange}
@@ -1846,9 +1934,8 @@ const fetchJobSuggestions = async (query) => {
                     <label className="form-label">Undesired Location</label>
                     <motion.input
                       type="text"
-                      className={`form-control form-input rounded-3 ${
-                        errors.undesiredLocation ? "is-invalid" : ""
-                      }`}
+                      className={`form-control form-input rounded-3 ${errors.undesiredLocation ? "is-invalid" : ""
+                        }`}
                       placeholder="e.g New York"
                       pattern="^[a-zA-Z0-9\s]+$"
                       value={formData.undesiredLocations}
@@ -1894,13 +1981,12 @@ const fetchJobSuggestions = async (query) => {
                   <input
                     id="resume"
                     type="file"
-                    className={`file-input ${
-                      errors.resume ? "is-invalid" : ""
-                    }`}
+                    className={`file-input ${errors.resume ? "is-invalid" : ""
+                      }`}
                     name="resume"
                     style={{ display: "none" }} // Hide the file input
                     onChange={handleFileChange}
-                    // Handle file selection
+                  // Handle file selection
                   />
 
                   <img
@@ -1965,7 +2051,7 @@ const fetchJobSuggestions = async (query) => {
                         display: "flex",
                         justifyContent: "center",
                         alignItems: "center",
-                      
+
                       }}
                     >
                       &#10005; {/* Cross icon (X) */}
