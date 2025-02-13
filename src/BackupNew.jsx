@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 import uploadIcon from "../assets/upload-resume.png";
@@ -54,8 +53,8 @@ const CandidateForm = () => {
   const [cachedResults, setCachedResults] = useState({});
   const wrapperRef = useRef(null);
   const inputRef = useRef(null);
-  const suggestionsListRef = useRef(null);
   const [popupMessage, setPopupMessage] = useState("");
+  const suggestionsListRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -85,26 +84,34 @@ const CandidateForm = () => {
     };
   };
 
+
   const fetchJobSuggestions = async (query) => {
     if (!query) return; // Handle empty query input
+
     const lowercaseQuery = query.toLowerCase();
+
     // Check if results are already cached (in useState)
     if (cachedResults[lowercaseQuery]) {
       setSuggestions(cachedResults[lowercaseQuery]);
       return;
     }
+
     setLoading(true);
     try {
       const response = await fetch(`http://3.110.181.207:8087/getSuggestions/${query}`, {
         method: "GET",
       });
+
       if (!response.ok) {
         throw new Error(`Failed to fetch job suggestions: ${response.statusText}`);
       }
+
       const data = await response.json();
+
       if (!Array.isArray(data)) {
         throw new Error("Invalid response format: data is not an array");
       }
+
       // Filter out already selected jobs from suggestions and remove duplicates
       const jobTitles = [...new Set(data
         .filter((title) => !selectedJobs.includes(title)) // Exclude selected jobs
@@ -121,92 +128,52 @@ const CandidateForm = () => {
       setLoading(false);
     }
   };
+
   // Debounced version of fetchJobSuggestions
   const debouncedFetch = debounce(fetchJobSuggestions, 200);
 
-  // const getJobTitlesForPayload = () => {
-  //   // Step 1: Split searchTerm into separate job titles if there's any comma (assuming user enters comma-separated values)
-  //   // const searchTermTitles = searchTerm.split(',')
-  //   //   .map((title) => title.trim())
-  //   //   .filter(Boolean);
-  //   if (!searchTerm) {
-  //     console.error("Invalid searchTerm:", searchTerm);
-  //     return []; // Return empty array to prevent undefined errors
-  //   }
-
-  //   const searchTermTitles = searchTerm.split(",");
-
-  //   // Step 2: Combine the selected jobs and the searchTerm titles
-  //   let allJobTitles = [...selectedJobs, ...searchTermTitles];
-
-  //   // Step 3: Remove duplicates by converting to a Set, then back to an array
-  //   allJobTitles = Array.from(new Set(allJobTitles));
-
-  //   return allJobTitles;
-  // };
   const getJobTitlesForPayload = () => {
-    let searchTermTitles = [];
+    // Step 1: Split searchTerm into separate job titles if there's any comma (assuming user enters comma-separated values)
+    // const searchTermTitles = searchTerm.split(',')
+    //   .map((title) => title.trim())
+    //   .filter(Boolean);
+    const searchTermTitles = (typeof searchTerm === "string" ? searchTerm : "")
+      .split(',')
+      .map((title) => title.trim())
+      .filter(Boolean);
 
-    // Handle both string and array inputs
-    if (Array.isArray(searchTerm)) {
-      searchTermTitles = searchTerm;
-    } else if (typeof searchTerm === 'string') {
-      searchTermTitles = searchTerm.trim().split(",")
-        .map(title => title.trim())
-        .filter(Boolean);
-    } else {
-      console.error("Invalid searchTerm:", searchTerm);
-      return [];
-    }
 
-    // Combine the selected jobs and the searchTerm titles
+    // Step 2: Combine the selected jobs and the searchTerm titles
     let allJobTitles = [...selectedJobs, ...searchTermTitles];
 
-    // Remove duplicates
+    // Step 3: Remove duplicates by converting to a Set, then back to an array
     allJobTitles = Array.from(new Set(allJobTitles));
 
     return allJobTitles;
   };
-  useEffect(() => {
-    if (selectedJobs.length > 0) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        jobTitles: "", // Clear validation error
-      }));
-    }
-  }, [selectedJobs]); // Runs whenever selectedJobs changes
-
   const handleJobInputChange = (e) => {
-    const value = e.target.value.trim(); // Remove unnecessary spaces
+    const value = e.target.value;
+    // console.log("value", value);
 
-    //  Clear validation error while typing
-    if (errors.jobTitles) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        jobTitles: "",
-      }));
-    }
-
-    setSearchTerm(value); //  Ensure search term updates
+    setSearchTerm(value);
+    setShowSuggestions(true);
 
     const terms = value.split(",").map((term) => term.trim());
-    const lastTerm = terms[terms.length - 1]; // Get last entered term
+    const lastTerm = terms[terms.length - 1];
 
-    // Ensure API call happens correctly
-    if (lastTerm.length >= 3) {
-      debouncedFetch(lastTerm); // 🔥 Call API for job suggestions
+    // If the last term is at least 4 characters long, fetch suggestions
+    if (lastTerm.length === 3 || lastTerm.length === 6) {
+      debouncedFetch(lastTerm); // Call the API for the last term
       setShowSuggestions(true);
-    } else {
-      setSuggestions([]); // Hide suggestions if term is too short
+    } else if (lastTerm.length < 4) {
+      setSuggestions([]); // Hide suggestions if the term is less than 4 characters
       setShowSuggestions(false);
+    } else {
+      setSuggestions(cachedResults[lastTerm] || []); // Use cache if the last term is already fetched
     }
 
     setSelectedIndex(-1);
   };
-
-
-
-
 
   const handleJobSuggestionClick = (suggestion) => {
     if (!selectedJobs.includes(suggestion)) {
@@ -317,12 +284,7 @@ const CandidateForm = () => {
       setFile(selectedFile);
       setUploading(true); // Start the upload state
       simulateUploadProgress(); // Simulate upload progress
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        resume: "",
-      }));
     }
-
   };
 
   // Simulate the file upload progress
@@ -363,7 +325,18 @@ const CandidateForm = () => {
     "PART TIME": "PART TIME",
     CONTRACT: "CONTRACT",
     INTERNSHIP: "INTERNSHIP",
-
+    // displayToApi: {
+    //   "Full Time": "FULL",
+    //   "Part Time": "PART",
+    //   Contract: "CONTRACT",
+    //   Internship: "INTERNSHIP",
+    // },
+    // apiToDisplay: {
+    //   FULL: "Full Time",
+    //   PART: "Part Time",
+    //   CONTRACT: "Contract",
+    //   INTERNSHIP: "Internship",
+    // },
   };
 
   const valueDayMap = {
@@ -446,7 +419,6 @@ const CandidateForm = () => {
   };
 
   const handleLocationToggle = (location) => {
-
     setSelectedLocations((prev) => {
       const newLocations = prev.includes(location)
         ? prev.filter((loc) => loc !== location)
@@ -537,12 +509,8 @@ const CandidateForm = () => {
       candidateEmail: "",
     };
 
-    // // Validation rule: jobTitles should not be empty and should contain at least one job title
-    // if (!formData.jobTitles || formData.jobTitles.length === 0) {
-    //   newErrors.jobTitles = "Please enter at least one job title.";
-    // }
-
-    if (selectedJobs.length === 0 && searchTerm.trim() === "") {
+    // Validation rule: jobTitles should not be empty and should contain at least one job title
+    if (!formData.jobTitles || formData.jobTitles.length === 0) {
       newErrors.jobTitles = "Please enter at least one job title.";
     }
 
@@ -634,40 +602,15 @@ const CandidateForm = () => {
     setErrors(newErrors);
     return Object.values(newErrors).every((error) => error === "");
   };
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
 
-    let updatedSelectedJobs = [...selectedJobs];
+  const handleFormSubmit = async (event) => {
+    event.preventDefault();
+    const validationErrors = validate();
 
-    // ✅ If user typed a job title but didn't select it, add it to selectedJobs
-    if (searchTerm.trim() !== "" && !updatedSelectedJobs.includes(searchTerm.trim())) {
-      updatedSelectedJobs.push(searchTerm.trim());
+    if (validationErrors) {
+      setPopupVisible(true);
     }
-
-    // ✅ Set the updated selected jobs
-    setSelectedJobs(updatedSelectedJobs);
-
-    // ✅ Validation
-    if (updatedSelectedJobs.length === 0) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        jobTitles: "Please enter at least one job title.",
-      }));
-      return; // ❌ Stop submission if there's an error
-    }
-
-    // ✅ Clear the validation error if jobTitles is valid
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      jobTitles: "",
-    }));
-
-    // 🚀 Proceed with form submission logic
-    console.log("Submitting with selected jobs:", updatedSelectedJobs);
   };
-
-
-
   const handleJobTitleChange = (e) => {
     const value = e.target.value;
 
@@ -678,16 +621,6 @@ const CandidateForm = () => {
     const value = e.target.value;
     setInput(value);
     setFormData({ ...formData, distributionList: value });
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    // If there's an error and the email is valid, remove the validation message
-    if (errors.distributionList && emailRegex.test(value)) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        distributionList: "",  // ✅ Clears the error message if the email is valid
-      }));
-    }
   };
 
   const handlePhysicalLocationChange = (e) => {
@@ -696,27 +629,15 @@ const CandidateForm = () => {
     if (regex.test(value)) {
       setFormData({ ...formData, physicalLocation: value });
     }
-    if (errors.physicalLocation) {
-      setErrors((preErrors) => ({
-        ...preErrors,
-        physicalLocation: "",
-      }))
-    }
   };
 
   const handleCandidateNameChange = (e) => {
     const value = e.target.value;
 
-    const regex = /^[a-zA-Z\s.]*$/;
+    const regex = /^[a-zA-Z\s]*$/;
 
     if (regex.test(value)) {
       setFormData({ ...formData, candidateName: value });
-    }
-    if (errors.candidateName) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        candidateName: "",  // 🔹 Clears the error message dynamically
-      }));
     }
   };
 
@@ -770,19 +691,19 @@ const CandidateForm = () => {
 
         physicalLocation: formData.physicalLocation || "",
 
-      //  fullRemote: selectedLocations.includes("Work From Home (WFH)"),
+        // fullRemote: selectedLocations.includes("Work From Home (WFH)"),
         //lowestSalary: formData.lowestSalary,
         lowestSalary: formData.modifiedSalary,
-        // undesiredRoles: formData.undesiredRoles || [],
+        //   undesiredRoles: formData.undesiredRoles || [],
         undesiredCompanies: formData.undesiredCompanies
           ? formData.undesiredCompanies.split(",").map((e) => e.trim())
           : [],
-        // candidateResume: "",
+        //candidateResume: formData.candidateResumeName,
         candidateResumeName: formData.candidateResumeName,
         candidateResumePath: "home/ubuntu/Ajay_Resume.pdf",
-       // maxJobAgeDays: 10,
-        // runId: "",
-        //  splitByCountry: true,
+        // maxJobAgeDays: 10,
+        //  runId: "",
+        //splitByCountry: true,
         desiredCompanies: formData.desiredCompanies
           ? formData.desiredCompanies.split(",").map((e) => e.trim())
           : [],
@@ -816,7 +737,7 @@ const CandidateForm = () => {
     try {
       const response = await axios.post(
         `http://3.110.181.207:8087/schedule`,
-        // `https://www.google.co.uk/`,
+        //`https://www.google.co.uk/`,
         formData2,
         {
           headers: {
@@ -833,6 +754,7 @@ const CandidateForm = () => {
         else {
           setPopupMessage("Preferences Submitted Successfully!");
         }
+
         setPopupVisible(true);
       }
     } catch (error) {
@@ -844,19 +766,7 @@ const CandidateForm = () => {
   const handleCandidateEmailChange = (e) => {
     const value = e.target.value;
     setFormData({ ...formData, candidateId: value });
-
-    // Define Email Regex Pattern
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    // If there's an error and the email is valid, remove the validation message
-    if (errors.candidateEmail && emailRegex.test(value)) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        candidateEmail: "",  // ✅ Clears the error message if the email is valid
-      }));
-    }
   };
-
 
   const getDisplayValue = (apiValue) => {
     const displayMap = {
@@ -1031,13 +941,6 @@ const CandidateForm = () => {
   const handleSalaryChange = (e) => {
     const value = e.target.value;
 
-
-    if (errors.lowestSalary) {
-      setErrors({ ...errors, lowestSalary: "" })
-    }
-
-
-
     // Remove any non-numeric characters (except for periods)
     const formattedValue = value.replace(/[^0-9.]/g, "");
 
@@ -1064,7 +967,7 @@ const CandidateForm = () => {
     const { name, value } = e.target;
     const pattern = /^[0-9%]*$/;
     if (pattern.test(value)) {
-      setFormData({ ...formData, [name]: value });
+    setFormData({ ...formData, [name]: value });
     }
   };
   const DesiredIndustriesSuggestions = [
@@ -1220,22 +1123,20 @@ const CandidateForm = () => {
                     )}
                   </div>
 
-                  {/* Conditionally render the search icon based on validation errors */}
-                  {!errors.candidateEmail && (
-                    <FaSearch
-                      style={{
-                        position: "absolute",
-                        right: "20px",
-                        top: "60%",
-                        zIndex: "1",
-                        color: "grey",
-                        cursor: "pointer",
-                      }}
-                      size={20}
-                      title="search"
-                      onClick={handleSearchClick}
-                    />
-                  )}
+                  {/* Icon positioned inside the input field */}
+                  <FaSearch
+                    style={{
+                      position: "absolute",
+                      right: "20px",
+                      top: "60%",
+                      zIndex: "1200",
+                      color: "grey",
+                      cursor: "pointer",
+                    }}
+                    size={25}
+                    title="search"
+                    onClick={handleSearchClick}
+                  />
 
                   {errorMessage && (
                     <div className="popup">
@@ -1299,7 +1200,7 @@ const CandidateForm = () => {
                       <div className="invalid-feedback">{errors.jobTitles}</div>
                     )}
 
-
+                    {/* Suggestions */}
                     {/* Suggestions */}
                     {showSuggestions && suggestions.length > 0 && (
                       <ul className="suggestions-list" ref={suggestionsListRef}>
@@ -1362,18 +1263,7 @@ const CandidateForm = () => {
                       className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${errors.jobLocation ? "border-danger" : ""
                         }`}
                       type="button"
-                      onClick={() => {
-                        setIsLocationOpen((prev) => !prev);
-
-                        // 🔹 Remove validation error when clicking the dropdown button
-                        if (errors.jobLocation) {
-                          setErrors((prevErrors) => ({
-                            ...prevErrors,
-                            jobLocation: "",
-                          }));
-                        }
-                      }}
-
+                      onClick={() => setIsLocationOpen((prev) => !prev)}
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
                     >
@@ -1567,15 +1457,7 @@ const CandidateForm = () => {
                       className={`btn custom-dropdown-button dropdown-toggle form-input rounded-3 w-100 text-start ${errors.jobType ? "border-danger" : ""
                         }`}
                       type="button"
-                      onClick={() => {
-                        setIsJobTypeOpen((prev) => !prev);
-                        if (errors.jobType) {
-                          setErrors((preErrors) => ({
-                            ...preErrors,
-                            jobType: ""
-                          }))
-                        }
-                      }}
+                      onClick={() => setIsJobTypeOpen((prev) => !prev)}
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
                     >
@@ -1641,16 +1523,7 @@ const CandidateForm = () => {
                       className={`btn custom-dropdown-button dropdown-toggle w-100 ${errors.reportSchedule ? "border-danger" : ""
                         }`}
                       type="button"
-                      onClick={() => {
-                        setIsOpen(!isOpen);
-                        if (errors.reportSchedule) {
-                          setErrors((preErrors) => ({
-                            ...preErrors,
-                            reportSchedule: ""
-                          }))
-                        }
-
-                      }}
+                      onClick={() => setIsOpen(!isOpen)}
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
                     >
@@ -2147,6 +2020,7 @@ const CandidateForm = () => {
           {isPopupVisible && (
             <div className="popup">
               <div className="popup-content">
+                {/* <p>Preferences Submitted Successfully!</p> */}
                 <p>{popupMessage}</p>
                 <button onClick={handleOkClick}>OK</button>
               </div>
