@@ -41,10 +41,7 @@ const CandidateForm = () => {
   const handleOkClick = () => {
     setPopupVisible(false);
     window.location.reload();
-    // Reset the form here if needed
   };
-
-  //search bar logic
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedJobs, setSelectedJobs] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
@@ -95,7 +92,7 @@ const CandidateForm = () => {
     }
     setLoading(true);
     try {
-      const response = await fetch(`http://3.110.181.207:8087/getSuggestions/${query}`, {
+      const response = await fetch(`http://15.207.108.241:8087/getSuggestions/${query}`, {
         method: "GET",
       });
       if (!response.ok) {
@@ -111,8 +108,6 @@ const CandidateForm = () => {
       )].slice(0, 10); // Limit to 10 suggestions
 
       setSuggestions(jobTitles);
-
-      // Cache the results in useState
       setCachedResults((prev) => ({ ...prev, [lowercaseQuery]: jobTitles }));
     } catch (error) {
       console.error("Error fetching job suggestions:", error);
@@ -171,13 +166,13 @@ const CandidateForm = () => {
     if (selectedJobs.length > 0) {
       setErrors((prevErrors) => ({
         ...prevErrors,
-        jobTitles: "", // Clear validation error
+        jobTitles: "",
       }));
     }
-  }, [selectedJobs]); // Runs whenever selectedJobs changes
+  }, [selectedJobs]);
 
   const handleJobInputChange = (e) => {
-    const value = e.target.value.trim(); // Remove unnecessary spaces
+    const value = e.target.value.trim();
 
     //  Clear validation error while typing
     if (errors.jobTitles) {
@@ -187,27 +182,21 @@ const CandidateForm = () => {
       }));
     }
 
-    setSearchTerm(value); //  Ensure search term updates
-
+    setSearchTerm(value);
     const terms = value.split(",").map((term) => term.trim());
-    const lastTerm = terms[terms.length - 1]; // Get last entered term
+    const lastTerm = terms[terms.length - 1];
 
     // Ensure API call happens correctly
     if (lastTerm.length >= 3) {
-      debouncedFetch(lastTerm); // 🔥 Call API for job suggestions
+      debouncedFetch(lastTerm);
       setShowSuggestions(true);
     } else {
-      setSuggestions([]); // Hide suggestions if term is too short
+      setSuggestions([]);
       setShowSuggestions(false);
     }
 
     setSelectedIndex(-1);
   };
-
-
-
-
-
   const handleJobSuggestionClick = (suggestion) => {
     if (!selectedJobs.includes(suggestion)) {
       setSelectedJobs([...selectedJobs, suggestion]);
@@ -419,8 +408,6 @@ const CandidateForm = () => {
   };
 
   useEffect(() => {
-    // console.log("Received formData.reportSchedule:", formData.reportSchedule);
-
     if (Array.isArray(formData.reportSchedule)) {
       // Convert API values to display values
       const displayValues = formData.reportSchedule.map((day) =>
@@ -770,7 +757,7 @@ const CandidateForm = () => {
 
         physicalLocation: formData.physicalLocation || "",
 
-      //  fullRemote: selectedLocations.includes("Work From Home (WFH)"),
+        //  fullRemote: selectedLocations.includes("Work From Home (WFH)"),
         //lowestSalary: formData.lowestSalary,
         lowestSalary: formData.modifiedSalary,
         // undesiredRoles: formData.undesiredRoles || [],
@@ -780,7 +767,7 @@ const CandidateForm = () => {
         // candidateResume: "",
         candidateResumeName: formData.candidateResumeName,
         candidateResumePath: "home/ubuntu/Ajay_Resume.pdf",
-       // maxJobAgeDays: 10,
+        // maxJobAgeDays: 10,
         // runId: "",
         //  splitByCountry: true,
         desiredCompanies: formData.desiredCompanies
@@ -815,7 +802,7 @@ const CandidateForm = () => {
 
     try {
       const response = await axios.post(
-        `http://3.110.181.207:8087/schedule`,
+        `http://15.207.108.241:8087/schedule`,
         // `https://www.google.co.uk/`,
         formData2,
         {
@@ -939,7 +926,7 @@ const CandidateForm = () => {
 
     try {
       const response = await fetch(
-        `http://3.110.181.207:8087/getUserVerification?userEmail=${encodeURIComponent(
+        `http://15.207.108.241:8087/getUserVerification?userEmail=${encodeURIComponent(
           userEmail
         )}`
       );
