@@ -54,6 +54,8 @@ const CandidateForm = () => {
   const suggestionsListRef = useRef(null);
   const [popupMessage, setPopupMessage] = useState("");
 
+  const candidateEmailRef = useRef(null);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -92,7 +94,7 @@ const CandidateForm = () => {
     }
     setLoading(true);
     try {
-      const response = await fetch(`http://15.207.108.241:8087/getSuggestions/${query}`, {
+      const response = await fetch(`http://65.0.133.85:8087/getSuggestions/${query}`, {
         method: "GET",
       });
       if (!response.ok) {
@@ -298,6 +300,8 @@ const CandidateForm = () => {
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const [filteredSuggestions1, setFilteredSuggestions1] = useState([]);
   const [showSelectionMessage, setShowSelectionMessage] = useState(false);
+
+
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -623,8 +627,11 @@ const CandidateForm = () => {
   };
   const handleFormSubmit = (e) => {
     e.preventDefault();
+    
 
     let updatedSelectedJobs = [...selectedJobs];
+
+    
 
     // ✅ If user typed a job title but didn't select it, add it to selectedJobs
     if (searchTerm.trim() !== "" && !updatedSelectedJobs.includes(searchTerm.trim())) {
@@ -756,20 +763,13 @@ const CandidateForm = () => {
           : [],
 
         physicalLocation: formData.physicalLocation || "",
-
-        //  fullRemote: selectedLocations.includes("Work From Home (WFH)"),
-        //lowestSalary: formData.lowestSalary,
         lowestSalary: formData.modifiedSalary,
         // undesiredRoles: formData.undesiredRoles || [],
         undesiredCompanies: formData.undesiredCompanies
           ? formData.undesiredCompanies.split(",").map((e) => e.trim())
           : [],
-        // candidateResume: "",
         candidateResumeName: formData.candidateResumeName,
         candidateResumePath: "home/ubuntu/Ajay_Resume.pdf",
-        // maxJobAgeDays: 10,
-        // runId: "",
-        //  splitByCountry: true,
         desiredCompanies: formData.desiredCompanies
           ? formData.desiredCompanies.split(",").map((e) => e.trim())
           : [],
@@ -802,8 +802,7 @@ const CandidateForm = () => {
 
     try {
       const response = await axios.post(
-        `http://15.207.108.241:8087/schedule`,
-        // `https://www.google.co.uk/`,
+        `http://65.0.133.85:8087/schedule`,
         formData2,
         {
           headers: {
@@ -831,11 +830,7 @@ const CandidateForm = () => {
   const handleCandidateEmailChange = (e) => {
     const value = e.target.value;
     setFormData({ ...formData, candidateId: value });
-
-    // Define Email Regex Pattern
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    // If there's an error and the email is valid, remove the validation message
     if (errors.candidateEmail && emailRegex.test(value)) {
       setErrors((prevErrors) => ({
         ...prevErrors,
@@ -843,8 +838,6 @@ const CandidateForm = () => {
       }));
     }
   };
-
-
   const getDisplayValue = (apiValue) => {
     const displayMap = {
       WFH: "Work From Home (WFH)",
@@ -882,7 +875,6 @@ const CandidateForm = () => {
           updatedJobs.push(suggestion); // Select
         }
       }
-
       // Update formData with the selectedJobs array
       setFormData((prevData) => ({
         ...prevData,
@@ -926,7 +918,7 @@ const CandidateForm = () => {
 
     try {
       const response = await fetch(
-        `http://15.207.108.241:8087/getUserVerification?userEmail=${encodeURIComponent(
+        `http://65.0.133.85:8087/getUserVerification?userEmail=${encodeURIComponent(
           userEmail
         )}`
       );
@@ -952,7 +944,6 @@ const CandidateForm = () => {
 
       setFormData((prevData) => ({
         ...prevData,
-
         candidateName: data.prefs.candidateName,
         candidateEmail: data.prefs.candidateEmail,
         jobTitles: data.prefs.jobTitles ? data.prefs.jobTitles.join(",") : "",
@@ -991,8 +982,6 @@ const CandidateForm = () => {
           : "",
         candidateResumeName: data.prefs.candidateResumeName,
       }));
-      // console.log(formData);
-
       setSelectedLocations(jobLocations);
       setSelectedJobTypes(jobTypes);
       setSelectedDays(reportSchedules);
@@ -1001,7 +990,6 @@ const CandidateForm = () => {
       console.error("Error:", error);
     }
   };
-
   const salarySuggestions = [
     "$25000",
     "$50000",
@@ -1011,21 +999,13 @@ const CandidateForm = () => {
     "$200000",
   ];
   const formatSalary = (salary) => {
-    // Format salary value with commas and add the dollar sign back
     return salary.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
   };
-
   const handleSalaryChange = (e) => {
     const value = e.target.value;
-
-
     if (errors.lowestSalary) {
       setErrors({ ...errors, lowestSalary: "" })
     }
-
-
-
-    // Remove any non-numeric characters (except for periods)
     const formattedValue = value.replace(/[^0-9.]/g, "");
 
     // Update form data
@@ -1071,8 +1051,6 @@ const CandidateForm = () => {
       ...prevData,
       desiredCompanySize: formattedValue,
     }));
-
-    // Filter suggestions based on user input
     if (formattedValue) {
       const filtered = DesiredIndustriesSuggestions.filter((suggestion) =>
         suggestion.replace(/[^0-9]/g, "").includes(formattedValue)
@@ -1084,7 +1062,7 @@ const CandidateForm = () => {
   };
 
   const handleSuggestionClick1 = (suggestion) => {
-    // Set the selected suggestion to the input field
+
     setFormData((prevData) => ({
       ...prevData,
       desiredCompanySize: suggestion,
@@ -1131,6 +1109,7 @@ const CandidateForm = () => {
     setFilteredSuggestions2([]); // Hide suggestions after selection
   };
 
+
   return (
     <div className="main-container">
       <div className="container">
@@ -1143,12 +1122,12 @@ const CandidateForm = () => {
           <div className="candidate-details-header mb-3">
             <h2 className="header-title">
               {" "}
-              <span> Candidate Details </span>
+              <center> Candidate Profile </center>
             </h2>
           </div>
 
           <form onSubmit={handleFormSubmit}>
-            <div className="row g-4">
+            <div className="row g-4" style={{ marginTop: "25px" }}>
               {/* Candidate Name */}
               <motion.div
                 className="col-md-6"
@@ -1161,6 +1140,7 @@ const CandidateForm = () => {
                   <label className="form-label">Candidate Name</label>
                   <input
                     type="text"
+
                     className={`form-control form-input rounded-3 bold-text ${errors.candidateName ? "is-invalid" : ""
                       }`}
                     placeholder="e.g John Doe"
@@ -1191,7 +1171,10 @@ const CandidateForm = () => {
                     <label className="form-label">Candidate Email</label>
 
                     <input
+                      ref={candidateEmailRef}
                       type="text"
+                      required
+                      name="candidateId"
                       className={`form-control form-input rounded-3 bold-text ${errors.candidateEmail ? "is-invalid" : ""
                         }`}
                       placeholder="e.g johndoe@gmail.com"

@@ -32,9 +32,10 @@
 }
 
 .header-title {
-  letter-spacing: 2px;
+  letter-spacing: 2.5px;
   font-weight: bold;
   margin-bottom: 0;
+  
   color: white;
   text-align: center;
 
